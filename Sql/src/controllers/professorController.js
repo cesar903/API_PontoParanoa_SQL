@@ -388,7 +388,7 @@ exports.contarFaltas = async (req, res) => {
 
     try {
         const inicioMes = new Date(ano, mes - 1, 1);
-        const fimMes = new Date(ano, mes, 0);
+        const fimMes = new Date(ano, mes, 1);
 
         // Buscar os dias letivos no Calendário
         const diasLetivos = await Calendario.findAll({
