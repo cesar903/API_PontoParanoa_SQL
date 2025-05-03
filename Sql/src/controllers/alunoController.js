@@ -192,40 +192,46 @@ exports.verAvisos = async (req, res) => {
 
 exports.verPontosComAlunos = async (req, res) => {
     try {
-        const { turno } = req.query;  // Obtém o turno da query string (manhã ou tarde)
+        const { turno } = req.query; 
 
-        // Busca os pontos com a turma do aluno
+        
         const pontosComAlunos = await Ponto.findAll({
             include: [
                 {
                     model: User,
                     as: "aluno",
-                    attributes: ["nome", "turma"],  // Inclui também o campo 'turma'
-                },
-            ],
+                    attributes: ["nome", "turma"]
+                }
+            ]
         });
 
-        // Filtra os pontos pelos alunos do turno selecionado
-        const horasPorAluno = pontosComAlunos.reduce((acc, ponto) => {
-            if (!ponto.aluno || !ponto.entrada || !ponto.saida) return acc;
+        const horasPorAluno = {};
 
-            const alunoNome = ponto.aluno.nome;
-            const alunoTurno = ponto.aluno.turma;
+        pontosComAlunos.forEach((ponto) => {
+            const aluno = ponto.aluno;
 
-            // Se o aluno não for do turno selecionado, ignore o ponto
-            if (turno && alunoTurno !== turno) return acc;
+            if (!aluno || !ponto.entrada || !ponto.saida) return;
 
-            if (!acc[alunoNome]) acc[alunoNome] = { horas: 0 };
+            const nome = aluno.nome;
+            const turma = aluno.turma;
+
+            // Se foi passado um turno e ele não bate com o do aluno, ignora
+            if (turno && turma !== turno) return;
+
+            if (!horasPorAluno[nome]) {
+                horasPorAluno[nome] = {
+                    horas: 0,
+                    turma
+                };
+            }
 
             if (ponto.status === "aprovado") {
                 const entrada = new Date(ponto.entrada);
                 const saida = new Date(ponto.saida);
-                const duracaoHoras = (saida - entrada) / (1000 * 60 * 60); // Converte milissegundos para horas
-                acc[alunoNome].horas += duracaoHoras;
+                const duracaoHoras = (saida - entrada) / (1000 * 60 * 60);
+                horasPorAluno[nome].horas += duracaoHoras;
             }
-
-            return acc;
-        }, {});
+        });
 
         res.json(horasPorAluno);
     } catch (error) {
@@ -233,6 +239,7 @@ exports.verPontosComAlunos = async (req, res) => {
         res.status(500).json({ msg: "Erro ao calcular horas por aluno." });
     }
 };
+
 
 
 exports.verAniversariantesDoMes = async (req, res) => {
