@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
-
 import { Bar } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -16,11 +15,24 @@ import {
 const Grafico = styled.div`
     padding-top: 2rem;
 `;
+const Container = styled.div`
+    text-align: center;
+`
+
+const Select = styled.select`
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin: auto;
+  background-color: transparent;
+`;
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const Graph = () => {
     const [alunos, setAlunos] = useState([]);
+    const [turnoSelecionado, setTurnoSelecionado] = useState("manha");
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -32,14 +44,17 @@ const Graph = () => {
         const fetchData = async () => {
             try {
                 const headers = { Authorization: `Bearer ${token}` };
-
                 const response = await axios.get("http://localhost:5000/alunos/pontos/com-alunos", { headers });
 
-                // Converte os dados para um array de objetos e ordena por horas (do maior para o menor)
-                const alunosArray = Object.entries(response.data).map(([nome, horas]) => ({
-                    nome,
-                    horas
-                })).sort((a, b) => b.horas - a.horas); // Ordenação
+                // Mapear e filtrar os dados conforme o turno selecionado
+                const alunosArray = Object.entries(response.data)
+                    .map(([nome, dados]) => ({
+                        nome,
+                        horas: dados.horas,
+                        turno: dados.turma, // Aqui estamos pegando a turma como o turno (manhã ou tarde)
+                    }))
+                    .filter(aluno => aluno.turno === turnoSelecionado) // Filtrando pelo turno
+                    .sort((a, b) => b.horas - a.horas); // Ordenação por horas
 
                 setAlunos(alunosArray);
             } catch (error) {
@@ -48,8 +63,9 @@ const Graph = () => {
         };
 
         fetchData();
-    }, []);
+    }, [turnoSelecionado]); // Sempre que o turno mudar, a lista é atualizada
 
+    // Função para formatar as horas
     const formatarHoras = (decimal) => {
         const horas = Math.floor(decimal);
         const minutos = Math.round((decimal - horas) * 60);
@@ -71,18 +87,14 @@ const Graph = () => {
                 borderWidth: 1,
             },
         ],
-        
     };
-
-    
-      
 
     const options = {
         responsive: true,
         maintainAspectRatio: false,
         indexAxis: "y",
         plugins: {
-            legend: { display: false }, 
+            legend: { display: false },
             title: { display: true, text: "Comparação de Horas entre Alunos" },
             tooltip: {
                 callbacks: {
@@ -91,26 +103,31 @@ const Graph = () => {
                         const horas = Math.floor(minutos / 60);
                         const restoMinutos = minutos % 60;
                         return `${horas}h${restoMinutos > 0 ? restoMinutos : ""}`;
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         scales: {
             x: { beginAtZero: true },
         },
     };
 
-    
-
-    
-
     // Altura dinâmica do gráfico
     const chartHeight = Math.max(400, labels.length * 40);
 
     return (
-        <Grafico style={{ width: "90%", height: `${chartHeight}px`, margin: "auto" }}>
-            <Bar data={data} options={options} />
-        </Grafico>
+        <Container>
+            {/* Seletor de turno */}
+            <Select value={turnoSelecionado} onChange={(e) => setTurnoSelecionado(e.target.value)}>
+                <option value="manha">Manhã</option>
+                <option value="tarde">Tarde</option>
+            </Select>
+
+            {/* Gráfico de barras */}
+            <Grafico style={{ height: `${chartHeight}px` }}>
+                <Bar data={data} options={options} />
+            </Grafico>
+        </Container>
     );
 };
 

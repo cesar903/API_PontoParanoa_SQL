@@ -192,21 +192,36 @@ exports.verAvisos = async (req, res) => {
 
 exports.verPontosComAlunos = async (req, res) => {
     try {
+        const { turno } = req.query;  // Obtém o turno da query string (manhã ou tarde)
+
+        // Busca os pontos com a turma do aluno
         const pontosComAlunos = await Ponto.findAll({
-            include: [{ model: User, as: "aluno", attributes: ["nome"] }]
+            include: [
+                {
+                    model: User,
+                    as: "aluno",
+                    attributes: ["nome", "turma"],  // Inclui também o campo 'turma'
+                },
+            ],
         });
 
+        // Filtra os pontos pelos alunos do turno selecionado
         const horasPorAluno = pontosComAlunos.reduce((acc, ponto) => {
             if (!ponto.aluno || !ponto.entrada || !ponto.saida) return acc;
 
             const alunoNome = ponto.aluno.nome;
-            if (!acc[alunoNome]) acc[alunoNome] = 0;
+            const alunoTurno = ponto.aluno.turma;
+
+            // Se o aluno não for do turno selecionado, ignore o ponto
+            if (turno && alunoTurno !== turno) return acc;
+
+            if (!acc[alunoNome]) acc[alunoNome] = { horas: 0 };
 
             if (ponto.status === "aprovado") {
                 const entrada = new Date(ponto.entrada);
                 const saida = new Date(ponto.saida);
-                const duracaoHoras = (saida - entrada) / (1000 * 60 * 60);
-                acc[alunoNome] += duracaoHoras;
+                const duracaoHoras = (saida - entrada) / (1000 * 60 * 60); // Converte milissegundos para horas
+                acc[alunoNome].horas += duracaoHoras;
             }
 
             return acc;
@@ -218,6 +233,7 @@ exports.verPontosComAlunos = async (req, res) => {
         res.status(500).json({ msg: "Erro ao calcular horas por aluno." });
     }
 };
+
 
 exports.verAniversariantesDoMes = async (req, res) => {
     try {
