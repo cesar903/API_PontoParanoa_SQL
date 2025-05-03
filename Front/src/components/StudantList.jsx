@@ -5,6 +5,7 @@ import { FaCheck, FaExclamationTriangle, FaClock } from "react-icons/fa";
 import ManualPointTeacher from "./ManualPointTeacher";
 import PointEdit from "./PointEdit";
 import Loading from "./Loading";
+import Graph from "./Graph";
 
 const Table = styled.table`
   margin-top: 40px;
@@ -236,7 +237,7 @@ function StudantList() {
                                 <td>{ponto.aluno?.nome}</td>
                                 <td>{ponto.aluno?.email}</td>
                                 <td>{formatarData(ponto.entrada)}</td>
-                                <td>{formatarData(ponto.saida)}</td>    
+                                <td>{formatarData(ponto.saida)}</td>
                                 <ActionCell>
                                     <Button
                                         $approve
@@ -264,8 +265,10 @@ function StudantList() {
                 </Table>
             )}
 
-
+            <Graph />
+            
             <ManualPointTeacher closeModal={closeModal} />
+
             {isEditModalOpen && (
                 <PointEdit
                     isOpen={isEditModalOpen}
