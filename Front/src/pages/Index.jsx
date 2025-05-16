@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from "react-router-dom"; 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { FaUserCircle, FaFileInvoice } from "react-icons/fa";
+import { FaUserCircle, FaUserPlus } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import styled from "styled-components";
 import { jwtDecode } from "jwt-decode";
@@ -171,8 +171,8 @@ function Index() {
                     </div>
                     {role == "professor" ?
                         <>
-                            <ReportButton to="/index/report" $active={location.pathname === "/index/register"}>
-                                <FaFileInvoice />
+                            <ReportButton to="/index/register" $active={location.pathname === "/index/register"}>
+                                <FaUserPlus />
                             </ReportButton></>
                         :
                         <></>}
@@ -187,8 +187,8 @@ function Index() {
 
             <NavBar>
                 {role === "professor" ?
-                    <NavButton to="/index/register" $active={location.pathname === "/index/register"}>
-                        Registrar Aluno
+                    <NavButton to="/index/report" $active={location.pathname === "/index/report"}>
+                        Classe
                     </NavButton>
                     :
                     <NavButton to="/index/points" $active={location.pathname === "/index/points"}>
