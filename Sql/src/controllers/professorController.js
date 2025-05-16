@@ -6,6 +6,8 @@ const moment = require("moment");
 const moment2 = require("moment-timezone");
 const { format } = require('date-fns');
 const { Sequelize } = require('sequelize');
+require("dotenv").config(); 
+const nodemailer = require("nodemailer");
 
 
 
@@ -485,3 +487,56 @@ exports.finalizarPonto = async (req, res) => {
         return res.status(500).json({ msg: "Erro ao finalizar ponto", error: error.message });
     }
 };
+
+
+exports.enviarRelatorio = async (req, res) => {
+  try {
+    const { alunoId } = req.params;
+    const { mes, ano } = req.body;
+    const pdfBuffer = req.file.buffer;
+
+    // Busca no banco com Sequelize (MySQL)
+    const user = await User.findByPk(alunoId); // <-- equivalente ao findById do Mongo
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    console.log(mes, ano);
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: `Relatório Mensal - ${user.nome} (${mes}/${ano})`,
+      text: `Olá, segue em anexo o relatório mensal de ${user.nome}.`,
+      attachments: [
+        {
+          filename: `relatorio_${user.nome}_${mes}_${ano}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ message: "Relatório enviado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao enviar e-mail:", error);
+    return res.status(500).json({ error: "Erro ao enviar relatório." });
+  }
+};
+
+// Transporter permanece igual
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});

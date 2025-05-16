@@ -1,4 +1,7 @@
 const express = require("express");
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 const authMiddleware = require("../middleware/authMiddleware");
 const { 
     listarPontosPendentes, 
@@ -17,7 +20,8 @@ const {
     atualizarAluno,
     contarFaltas,
     excluirPonto,
-    finalizarPonto
+    finalizarPonto,
+    enviarRelatorio,
 } = require("../controllers/professorController");
 
 const router = express.Router();
@@ -48,6 +52,7 @@ router.put("/calendario/:data/aviso", authMiddleware, professorMiddleware, adici
 router.get("/contar-faltas/:alunoId", authMiddleware, professorMiddleware, contarFaltas);
 router.post("/usuarios", authMiddleware, professorMiddleware, cadastrarUsuario);
 router.get("/relatorio/:alunoId", authMiddleware, professorMiddleware, gerarRelatorio);
+router.post("/enviar-relatorio/:alunoId", authMiddleware, professorMiddleware, upload.single('relatorio'), enviarRelatorio);
 
 
 

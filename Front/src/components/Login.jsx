@@ -139,7 +139,7 @@ function Login() {
                 <form onSubmit={handleSubmit}>
                     <Centralized>
                         <Icon>
-                            <GiRabbitHead />
+                            <FaUser />
                         </Icon>
                     </Centralized>
                     <Input

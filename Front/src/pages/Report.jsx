@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { PDFDownloadLink, pdf } from "@react-pdf/renderer";
 import PDFReport from "../components/PDFReport";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -192,41 +192,101 @@ function Report() {
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
-           
+
             if (responseRegistros.data.length === 0) {
                 alert(`O aluno ${aluno.nome} não possui registros de check-in no mês ${mes}/${ano}.`);
-                return; 
+                return;
             }
 
             const responseFaltas = await axios.get(
                 `http://localhost:5000/professores/contar-faltas/${aluno.id}?mes=${mes}&ano=${ano}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
-            
+
             setRegistros(responseRegistros.data);
-            setFaltas(responseFaltas.data.faltas); 
-            setIsReportModalOpen(true); 
+            setFaltas(responseFaltas.data.faltas);
+            setIsReportModalOpen(true);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
             alert("Erro ao buscar dados do aluno.");
-        }finally {
-            setLoading(false); 
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleConfirmarRelatorio = () => {
-        setIsReportModalOpen(false); 
+        setIsReportModalOpen(false);
         setRelatorioPronto(
             <PDFReport
                 aluno={alunoSelecionado}
                 registros={registros}
                 mes={mesSelecionado.getMonth() + 1}
                 ano={mesSelecionado.getFullYear()}
-                observacao={observacao} 
+                observacao={observacao}
                 faltas={faltas}
             />
         );
-        setObservacao("");
+    };
+
+    const handleEnviarRelatorio = async () => {
+        if (!alunoSelecionado) {
+            alert("Selecione um aluno para enviar o relatório.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // Dados que você já tem
+            const nome = alunoSelecionado.nome;
+            const mes = mesSelecionado.getMonth() + 1;
+            const ano = mesSelecionado.getFullYear();
+
+
+            // Criação do PDF como componente
+            const doc = (
+                <PDFReport
+                    aluno={alunoSelecionado}
+                    registros={registros}
+                    mes={mes}
+                    ano={ano}
+                    observacao={observacao}
+                    faltas={faltas}
+                />
+            );
+
+
+            // Geração do blob PDF
+            const blob = await pdf(doc).toBlob();
+
+            // Monta FormData
+            const formData = new FormData();
+            formData.append("relatorio", blob, `relatorio_${nome}_${mes}_${ano}.pdf`);
+            formData.append("alunoId", alunoSelecionado._id);
+            formData.append("alunoNome", nome);
+            formData.append("mes", mes);
+            formData.append("ano", ano);
+
+            // Envia para o backend
+            await axios.post(
+                `http://localhost:5000/professores/enviar-relatorio/${alunoSelecionado.id}`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            alert("Relatório enviado com sucesso!");
+            setObservacao("");
+        } catch (error) {
+            console.error("Erro ao enviar relatório:", error);
+            alert("Falha ao enviar relatório.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -244,7 +304,7 @@ function Report() {
                     registros={registros}
                     mes={mesSelecionado.getMonth() + 1}
                     ano={mesSelecionado.getFullYear()}
-                    observacao={observacao} 
+                    observacao={observacao}
                     faltas={faltas}
                 />
             );
@@ -306,12 +366,16 @@ function Report() {
                             <td>
                                 <Button onClick={() => handleGerarRelatorio(aluno)}>Gerar Relatório</Button>
                                 {alunoSelecionado && alunoSelecionado.id === aluno.id && registros.length > 0 && relatorioPronto && (
-                                    <PDFDownloadLink
-                                        document={relatorioPronto}
-                                        fileName={`relatorio_${alunoSelecionado.nome}.pdf`}
-                                    >
-                                        {({ loading }) => <Button>{loading ? "Gerando..." : "Baixar PDF"}</Button>}
-                                    </PDFDownloadLink>
+                                    <>
+                                        <PDFDownloadLink
+                                            document={relatorioPronto}
+                                            fileName={`relatorio_${alunoSelecionado.nome}.pdf`}
+                                        >
+                                            {({ loading }) => <Button>{loading ? "Gerando..." : "Baixar PDF"}</Button>}
+                                        </PDFDownloadLink>
+                                        <Button onClick={handleEnviarRelatorio}>Enviar Relatório</Button>
+
+                                    </>
                                 )}
                             </td>
                         </tr>
