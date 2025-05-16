@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import WholeClass from "../components/WholeClass";
 import Modal from "../components/ModalObs";
+import Lack from "../components/Lack";
 import Loading from "../components/Loading";
 
 const Table = styled.table`
@@ -42,6 +43,35 @@ const Button = styled.button`
 
   &:hover {
     background-color: var(--DwMediumGray);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column; // para empilhar os botões
+  gap: 10px; // espaçamento entre eles
+  z-index: 1000;
+`;
+
+const FloatingButton = styled.button`
+  bottom: 20px;
+  right: 20px;
+  background: var(--DwYellow);
+  color: black;
+  border: none;
+  padding: 15px 20px;
+  border-radius: 50px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+
+  &:hover {
+    background: var(--DwBoldGray);
+    color: white;
   }
 `;
 
@@ -106,25 +136,6 @@ const InputPesquisa = styled.input`
   width: 100%;
 `;
 
-const FloatingButton = styled.button`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #ffcc00;
-  color: black;
-  border: none;
-  padding: 15px 20px;
-  border-radius: 50px;
-  font-size: 16px;
-  cursor: pointer;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-  transition: 0.3s;
-
-  &:hover {
-    background: #ffaa00;
-  }
-`;
-
 
 
 
@@ -141,6 +152,7 @@ function Report() {
     const [observacao, setObservacao] = useState("");
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [faltas, setFaltas] = useState([]);
+    const [isLackModalOpen, setIsLackModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
 
@@ -320,11 +332,17 @@ function Report() {
             <Loading show={loading} />
             <SeletorContainer>
                 <Label>Selecionar Mês:</Label>
-                <FloatingButton onClick={() => setIsModalOpen(true)}>
-                    Editar Turmas
-                </FloatingButton>
+                <ButtonGroup>
+                    <FloatingButton onClick={() => setIsModalOpen(true)}>
+                        Editar Turmas
+                    </FloatingButton>
+                    <FloatingButton onClick={() => setIsLackModalOpen(true)}>
+                        Falta Justificada
+                    </FloatingButton>
+                </ButtonGroup>
 
                 <WholeClass isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                <Lack isOpen={isLackModalOpen} onClose={() => setIsLackModalOpen(false)} />
 
                 <SeletorMes
                     selected={mesSelecionado}

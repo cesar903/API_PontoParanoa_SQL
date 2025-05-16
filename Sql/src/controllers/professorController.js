@@ -1,12 +1,13 @@
 const Ponto = require("../models/Ponto"); // Usando o Sequelize e exportando o modelo
 const Calendario = require("../models/Calendario"); // Para o modelo Calendario
 const User = require("../models/User")
+const Falta = require("../models/Falta")
 const bcrypt = require("bcryptjs");
 const moment = require("moment");
 const moment2 = require("moment-timezone");
 const { format } = require('date-fns');
 const { Sequelize } = require('sequelize');
-require("dotenv").config(); 
+require("dotenv").config();
 const nodemailer = require("nodemailer");
 
 
@@ -490,53 +491,86 @@ exports.finalizarPonto = async (req, res) => {
 
 
 exports.enviarRelatorio = async (req, res) => {
-  try {
-    const { alunoId } = req.params;
-    const { mes, ano } = req.body;
-    const pdfBuffer = req.file.buffer;
+    try {
+        const { alunoId } = req.params;
+        const { mes, ano } = req.body;
+        const pdfBuffer = req.file.buffer;
 
-    // Busca no banco com Sequelize (MySQL)
-    const user = await User.findByPk(alunoId); // <-- equivalente ao findById do Mongo
+        // Busca no banco com Sequelize (MySQL)
+        const user = await User.findByPk(alunoId); // <-- equivalente ao findById do Mongo
 
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado." });
+        if (!user) {
+            return res.status(404).json({ error: "Usuário não encontrado." });
+        }
+
+        console.log(mes, ano);
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: `Relatório Mensal - ${user.nome} (${mes}/${ano})`,
+            text: `Olá, segue em anexo o relatório mensal de ${user.nome}.`,
+            attachments: [
+                {
+                    filename: `relatorio_${user.nome}_${mes}_${ano}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                },
+            ],
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        return res.status(200).json({ message: "Relatório enviado com sucesso!" });
+    } catch (error) {
+        console.error("Erro ao enviar e-mail:", error);
+        return res.status(500).json({ error: "Erro ao enviar relatório." });
     }
-
-    console.log(mes, ano);
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: `Relatório Mensal - ${user.nome} (${mes}/${ano})`,
-      text: `Olá, segue em anexo o relatório mensal de ${user.nome}.`,
-      attachments: [
-        {
-          filename: `relatorio_${user.nome}_${mes}_${ano}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    return res.status(200).json({ message: "Relatório enviado com sucesso!" });
-  } catch (error) {
-    console.error("Erro ao enviar e-mail:", error);
-    return res.status(500).json({ error: "Erro ao enviar relatório." });
-  }
 };
 
 // Transporter permanece igual
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+        rejectUnauthorized: false,
+    },
 });
+
+
+exports.adicionarFaltaJustificada = async (req, res) => {
+    console.log("Parâmetros recebidos:", req.params, req.body);
+    const { alunoId } = req.params;
+    const { data, justificada, motivo } = req.body;
+
+    if (!alunoId || !data) {
+        return res.status(400).json({ msg: "Aluno e data são obrigatórios" });
+    }
+
+    try {
+        // Busca o usuário pelo PK com Sequelize
+        const aluno = await User.findByPk(alunoId);
+
+        if (!aluno || aluno.role !== "aluno") {
+            return res.status(404).json({ msg: "Aluno não encontrado" });
+        }
+
+        // Cria a falta usando Sequelize
+        const novaFalta = await Falta.create({
+            alunoId,
+            data, // Sequelize aceita string ISO para DATEONLY
+            justificada: justificada || false,
+            motivo: justificada ? motivo || "Justificativa não informada" : "",
+        });
+
+        res.status(201).json({ msg: "Falta registrada com sucesso!", falta: novaFalta });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Erro ao registrar falta" });
+    }
+};

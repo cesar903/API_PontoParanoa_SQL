@@ -22,6 +22,8 @@ const {
     excluirPonto,
     finalizarPonto,
     enviarRelatorio,
+    adicionarFaltaJustificada,
+
 } = require("../controllers/professorController");
 
 const router = express.Router();
@@ -53,6 +55,7 @@ router.get("/contar-faltas/:alunoId", authMiddleware, professorMiddleware, conta
 router.post("/usuarios", authMiddleware, professorMiddleware, cadastrarUsuario);
 router.get("/relatorio/:alunoId", authMiddleware, professorMiddleware, gerarRelatorio);
 router.post("/enviar-relatorio/:alunoId", authMiddleware, professorMiddleware, upload.single('relatorio'), enviarRelatorio);
+router.post("/falta-justificada/:alunoId", authMiddleware, professorMiddleware, adicionarFaltaJustificada);
 
 
 
