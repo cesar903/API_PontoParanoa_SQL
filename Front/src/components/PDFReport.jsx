@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     },
 });
 
-const PDFReport = ({ aluno, registros, mes, ano, observacao, faltas }) => {
+const PDFReport = ({ aluno, registros, mes, ano, observacao, faltas, faltasJustificadas }) => {
     // Função para calcular a diferença de horas entre check-in e check-out
     const calcularHoras = (checkIn, checkOut) => {
         const [inHoras, inMinutos] = checkIn.split(":").map(Number);
@@ -142,6 +142,14 @@ const PDFReport = ({ aluno, registros, mes, ano, observacao, faltas }) => {
                 <View style={styles.infoSection}>
                     <Text>Aluna: <Text style={{ fontWeight: "bold" }}>{aluno.nome}</Text></Text>
                     <Text>Email: <Text style={{ fontWeight: "bold" }}>{aluno.email}</Text></Text>
+                    <Text>Faltas Justificadas:</Text>
+                    <View>
+                        {faltasJustificadas.map((falta, index) => (
+                            <Text key={index} style={{ marginBottom: 2 }}>
+                                {falta.data} - Motivo: {falta.motivo}
+                            </Text>
+                        ))}
+                    </View>
                 </View>
 
                 <Table registros={registrosFiltrados} calcularHoras={calcularHoras} formatarHoras={formatarHoras} />

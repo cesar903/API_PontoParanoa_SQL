@@ -184,6 +184,7 @@ export default function Lack({ isOpen, onClose }) {
                                 <option key={aluno.id} value={aluno.id}>
                                     {aluno.nome}
                                 </option>
+                                
                             ))}
                         </Select>
 

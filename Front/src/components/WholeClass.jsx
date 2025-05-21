@@ -349,7 +349,6 @@ const WholeClass = ({ isOpen, onClose }) => {
                                         type="email"
                                         value={selectedAluno.email}
                                         onChange={(e) => setSelectedAluno({ ...selectedAluno, email: e.target.value })}
-                                        disabled
                                     />
                                 </Label>
 

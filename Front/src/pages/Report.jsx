@@ -154,6 +154,7 @@ function Report() {
     const [faltas, setFaltas] = useState([]);
     const [isLackModalOpen, setIsLackModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [faltasJustificadas, setFaltasJustificadas] = useState([]);
 
 
     useEffect(() => {
@@ -204,6 +205,9 @@ function Report() {
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
+             const { relatorio, faltasJustificadasArray } = responseRegistros.data;
+    
+
 
             if (responseRegistros.data.length === 0) {
                 alert(`O aluno ${aluno.nome} não possui registros de check-in no mês ${mes}/${ano}.`);
@@ -215,8 +219,9 @@ function Report() {
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
-            setRegistros(responseRegistros.data);
+            setRegistros(relatorio)
             setFaltas(responseFaltas.data.faltas);
+            setFaltasJustificadas(faltasJustificadasArray);
             setIsReportModalOpen(true);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
@@ -236,6 +241,7 @@ function Report() {
                 ano={mesSelecionado.getFullYear()}
                 observacao={observacao}
                 faltas={faltas}
+                faltasJustificadas={faltasJustificadas}
             />
         );
     };
@@ -264,6 +270,7 @@ function Report() {
                     ano={ano}
                     observacao={observacao}
                     faltas={faltas}
+                    faltasJustificadas={faltasJustificadas}
                 />
             );
 
@@ -318,6 +325,7 @@ function Report() {
                     ano={mesSelecionado.getFullYear()}
                     observacao={observacao}
                     faltas={faltas}
+                    faltasJustificadas={faltasJustificadas}
                 />
             );
         } else {

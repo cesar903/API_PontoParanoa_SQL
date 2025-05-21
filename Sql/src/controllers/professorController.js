@@ -7,6 +7,7 @@ const moment = require("moment");
 const moment2 = require("moment-timezone");
 const { format } = require('date-fns');
 const { Sequelize } = require('sequelize');
+const { Op } = require('sequelize');
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
@@ -256,43 +257,67 @@ exports.adicionarAviso = async (req, res) => {
 
 exports.gerarRelatorio = async (req, res) => {
     const { alunoId } = req.params;
+    const { mes, ano } = req.query;
 
+    const timezone = "America/Sao_Paulo";
+
+    if (!mes || !ano) {
+        return res.status(400).json({ msg: "Mês e ano são obrigatórios" });
+    }
 
     try {
-        // Buscar pontos aprovados para o aluno específico
+        const mesNumero = parseInt(mes) - 1;
+        const anoNumero = parseInt(ano);
+
+        const inicioMes = moment.tz({ year: anoNumero, month: mesNumero, day: 1 }, timezone).startOf('day').toDate();
+        const fimMes = moment.tz(inicioMes, timezone).endOf('month').toDate();
+
         const pontosPendentes = await Ponto.findAll({
             where: { alunoId, status: "aprovado" },
             include: {
                 model: User,
-                as: 'aluno', // usa o alias certo aqui!
+                as: 'aluno',
                 attributes: ['nome', 'email']
             }
         });
 
-        const timezone = "America/Sao_Paulo";
+        const faltasJustificadas = await Falta.findAll({
+            where: {
+                alunoId,
+                data: {
+                    [Op.between]: [inicioMes, fimMes]
+                }
+            },
+            order: [['data', 'ASC']]
+        });
 
-        // Formatação dos dados para o relatório
-        const relatorio = pontosPendentes.map((ponto) => {
-            const entrada = moment2.tz(ponto.entrada, timezone);
-            const saida = ponto.saida ? moment2.tz(ponto.saida, timezone) : null;
+        const faltasJustificadasArray = faltasJustificadas.map(falta => ({
+            data: moment.tz(falta.data, timezone).format("DD/MM/YYYY"),
+            motivo: falta.motivo
+        }));
+
+        
+
+        const relatorio = pontosPendentes.map(ponto => {
+            const entrada = moment.tz(ponto.entrada, timezone);
+            const saida = ponto.saida ? moment.tz(ponto.saida, timezone) : null;
 
             return {
-                nome: ponto.aluno.nome, // Corrigido aqui!
-                email: ponto.aluno.email, // Corrigido aqui!
+                nome: ponto.aluno.nome,
+                email: ponto.aluno.email,
                 data: entrada.format("DD/MM/YYYY"),
                 checkIn: entrada.format("HH:mm:ss"),
                 checkOut: saida ? saida.format("HH:mm:ss") : "-",
                 status: ponto.status,
             };
         });
-
-
-        res.json(relatorio);
+        res.json({ relatorio, faltasJustificadasArray });
     } catch (error) {
         console.error("Erro ao gerar relatório:", error);
         res.status(500).json({ msg: "Erro ao gerar relatório de pontos pendentes" });
     }
 };
+
 
 exports.editarPonto = async (req, res) => {
     const { id } = req.params;
