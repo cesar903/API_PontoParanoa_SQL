@@ -165,22 +165,6 @@ exports.cadastrarDiaLetivo = async (req, res) => {
         res.status(500).json({ msg: "Erro ao cadastrar dia letivo" });
     }
 };
-exports.cadastrarDiaLetivo = async (req, res) => {
-    const { data, temAula } = req.body;
-
-    if (!data || temAula === undefined) {
-        return res.status(400).json({ msg: "Data e temAula são obrigatórios" });
-    }
-
-    try {
-        const novoDia = await Calendario.create({ data, temAula });
-        res.status(201).json(novoDia);
-    } catch (error) {
-        console.error("Erro ao cadastrar dia letivo:", error);
-        res.status(500).json({ msg: "Erro ao cadastrar dia letivo" });
-    }
-};
-
 
 exports.listarCalendario = async (req, res) => {
     try {
@@ -292,11 +276,13 @@ exports.gerarRelatorio = async (req, res) => {
         });
 
         const faltasJustificadasArray = faltasJustificadas.map(falta => ({
+            id: falta.id,
             data: moment.tz(falta.data, timezone).format("DD/MM/YYYY"),
             motivo: falta.motivo
         }));
 
-        
+        console.log("Faltas justificadas:", faltasJustificadasArray);
+
 
         const relatorio = pontosPendentes.map(ponto => {
             const entrada = moment.tz(ponto.entrada, timezone);
@@ -598,4 +584,25 @@ exports.adicionarFaltaJustificada = async (req, res) => {
         console.error(error);
         res.status(500).json({ msg: "Erro ao registrar falta" });
     }
+};
+
+exports.excluirFaltaJustificada = async (req, res) => {
+  const { faltaId } = req.params;
+  console.log("ID da falta a ser excluída:", faltaId);
+
+  try {
+    // Tenta deletar a falta com o ID recebido
+    const deletedCount = await Falta.destroy({
+      where: { id: faltaId } // ou 'faltaId' dependendo do nome da chave primária no seu model
+    });
+
+    if (deletedCount === 0) {
+      return res.status(404).json({ msg: "Falta não encontrada." });
+    }
+
+    res.status(200).json({ msg: "Falta excluída com sucesso." });
+  } catch (error) {
+    console.error("Erro ao excluir falta:", error);
+    res.status(500).json({ msg: "Erro ao excluir falta." });
+  }
 };
