@@ -414,7 +414,7 @@ const Calendario = () => {
             dia?.aviso && dia.aviso.trim() !== "" && (
               <Aviso
                 className="aviso"
-                onClick={() => handleAvisoClick(dia.aviso)}
+                onClick={() => handleAvisoClick(dia.aviso, dia.data)}
               >
 
               </Aviso>
