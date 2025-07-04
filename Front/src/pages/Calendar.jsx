@@ -6,6 +6,7 @@ import AddInfo from "../components/AddInfo";
 import ModalInfo from "../components/ModalInfo";
 import NoticeBoard from "../components/NoticeBoard";
 import BirthdayBoard from "../components/BirthdayBoard";
+import { FaCakeCandles } from "react-icons/fa6";
 
 const CalendarContainer = styled.div`
   display: flex;
@@ -85,6 +86,7 @@ const CalendarContainer = styled.div`
     
 
     &__tile {
+      position: relative;
       height: 80px;
       transition: all 0.2s ease;
       display: flex;
@@ -115,6 +117,9 @@ const CalendarContainer = styled.div`
       &--now {
         border-color: #d31e1e !important;
       }
+    }
+    .react-calendar__tile.aniversario {
+      color: #9b59b6;
     }
   }
 `;
@@ -183,10 +188,7 @@ const Calendario = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [reload, setReload] = useState(false);
-  const [clicks, setClicks] = useState(0);
-
-  let clickTimeout = null;
-
+  const [aniversarios, setAniversarios] = useState([]);
 
   useEffect(() => {
     const fetchCalendario = async () => {
@@ -222,94 +224,117 @@ const Calendario = () => {
     fetchCalendario();
   }, [reload]);
 
+
+  useEffect(() => {
+    const fetchAniversariantes = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/alunos/aniversariantes", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+
+        // Transforma os aniversariantes em uma lista de datas no formato 'YYYY-MM-DD'
+        const datasAniversarios = response.data.map(aluno => {
+          const [ano, mes, dia] = aluno.nasc.split("T")[0].split("-");
+          const dataFormatada = new Date(anoAtual, Number(mes) - 1, Number(dia));
+          return dataFormatada.toISOString().split("T")[0];
+        });
+
+        setAniversarios(datasAniversarios);
+      } catch (error) {
+        console.error("Erro ao buscar aniversariantes:", error);
+      }
+    };
+
+    fetchAniversariantes();
+  }, []);
+
+
   const handleDayClick = (date) => {
     setSelectedDay(date);
-    setClicks(prev => prev + 1);
-    if (clickTimeout) clearTimeout(clickTimeout);
-
-    clickTimeout = setTimeout(() => {
-      if (clicks === 1) {
-        handleDoubleClick(date);
-      }
-      setClicks(0);
-    }, 250); 
   };
-  
 
-  const handleDoubleClick = async (date) => {
-    if (role == "professor") {
-      if (date.getDay() === 0 || date.getDay() === 6) {
-        alert("Não é permitido adicionar aula em sábados e domingos.");
-        return;
-      }
+
+  const toggleDayStatus = async () => {
+    if (role !== "professor") {
+      alert("Você não tem permissão para alterar o calendário.");
+      return;
     }
-  
-    const dateString = date.toISOString().split("T")[0];
-    console.log("Data selecionada:", dateString);
-    
+
+    if (!selectedDay) {
+      console.warn("Nenhum dia selecionado para alternar o status.");
+      return;
+    }
+
+    const dateString = selectedDay.toISOString().split("T")[0];
     const token = localStorage.getItem("token");
-  
+
     if (!token) {
       console.error("Usuário não autenticado.");
       return;
     }
-  
+
     const diaExistente = datas.find((dia) => dia.data === dateString);
     const temAula = diaExistente ? !diaExistente.temAula : true;
-  
+
     try {
-      if (role === "professor") {
-        if (diaExistente && diaExistente.id) {
-          await axios.put(
-            `http://localhost:5000/professores/calendario/${diaExistente.id}`,
-            { temAula },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-  
-          setDatas((prevDatas) =>
-            prevDatas.map((dia) =>
-              dia.data === dateString ? { ...dia, temAula } : dia
-            )
-          );
-        } else {
-          const response = await axios.post(
-            "http://localhost:5000/professores/calendario",
-            { data: dateString, temAula },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-  
-          setDatas((prevDatas) => [
-            ...prevDatas,
-            { id: response.data.id, data: dateString, temAula },
-          ]);
-        }
-        setReload((prev) => !prev);
+      if (diaExistente && diaExistente.id) {
+        await axios.put(
+          `http://localhost:5000/professores/calendario/${diaExistente.id}`,
+          { temAula },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setDatas((prevDatas) =>
+          prevDatas.map((dia) =>
+            dia.data === dateString ? { ...dia, temAula } : dia
+          )
+        );
+      } else {
+        const response = await axios.post(
+          "http://localhost:5000/professores/calendario",
+          { data: dateString, temAula },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setDatas((prevDatas) => [
+          ...prevDatas,
+          { id: response.data.id, data: dateString, temAula },
+        ]);
       }
+      setReload((prev) => !prev);
     } catch (error) {
       console.error("Erro ao atualizar dia letivo", error);
+      alert("Erro ao atualizar o dia letivo. Verifique o console para mais detalhes.");
     }
   };
 
 
   const tileClassName = ({ date }) => {
     const dateString = date.toISOString().split("T")[0];
-    const dia = datas.find((dia) => dia.data === dateString);
+    const dia = datas.find((d) => d.data === dateString);
+    const todayString = new Date().toISOString().split("T")[0];
 
     let classes = "";
 
-    if (date.getDay() === 0 || date.getDay() === 6) {
-      classes += "sem-aula"; 
-    }
-
     if (dia) {
       classes += dia.temAula ? " tem-aula" : " sem-aula";
-      if (dia.aviso && dia.aviso.trim() !== "") {
-        classes += " aviso"; 
+    } else {
+      if (date.getDay() === 0 || date.getDay() === 6) {
+        classes += " sem-aula";
       }
     }
 
-    if (dateString === new Date().toISOString().split("T")[0]) {
+    if (dateString === todayString) {
       classes += " hoje";
+    }
+
+    if (aniversarios.includes(dateString)) {
+      classes += " aniversario";
     }
 
     return classes.trim();
@@ -318,13 +343,26 @@ const Calendario = () => {
 
 
   useEffect(() => {
-    window.addEventListener("keydown", handleDeleteKey);
-    return () => {
-      window.removeEventListener("keydown", handleDeleteKey);
+    const handleKeyPress = (e) => {
+      if (e.key === "Delete") {
+        handleDeleteKey(e);
+      } else if (e.key === "Enter") {
+        toggleDayStatus();
+      }
     };
-  }, [selectedDay]);
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [selectedDay, datas, role, toggleDayStatus]);
+
 
   const handleDeleteKey = async (e) => {
+    if (role !== "professor") {
+      return;
+    }
+
     if (e.key === "Delete" && selectedDay) {
       const token = localStorage.getItem("token");
       const dateString = selectedDay.toISOString().split("T")[0];
@@ -337,59 +375,80 @@ const Calendario = () => {
 
       if (diaExistente) {
         try {
-          const response = await axios.delete(
+          const confirmation = window.confirm(`Tem certeza que deseja excluir o registro do dia ${dateString}?`);
+          if (!confirmation) {
+            return;
+          }
+
+          await axios.delete(
             `http://localhost:5000/professores/calendario/${diaExistente.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          console.log(response.data.msg);
+          console.log(`Dia letivo ${dateString} excluído com sucesso.`);
 
           setDatas((prevDatas) =>
             prevDatas.filter((dia) => dia.id !== diaExistente.id)
           );
+          setSelectedDay(null);
+          setReload((prev) => !prev);
         } catch (error) {
           console.error("Erro ao excluir dia letivo", error);
+          alert("Erro ao excluir o dia letivo. Verifique o console para mais detalhes.");
         }
       } else {
-        console.error("Dia não encontrado para exclusão");
+        console.warn("Nenhum registro encontrado para excluir no dia selecionado.");
       }
-      setReload((prev) => !prev);
     }
   };
 
-  const handleAvisoClick = (aviso, diaId) => {
+  const handleAvisoClick = (aviso, diaData) => {
     if (aviso && aviso.trim() !== "") {
       setModalMessage(aviso);
-      setSelectedDay(diaId); 
+      setSelectedDay(new Date(diaData)); // Passa o objeto Date, que contém a data original
       setIsModalOpen(true);
     }
   };
 
-  const handleSaveAviso = (newMessage) => {
-    if (!selectedDay) return;
+  const handleSaveAviso = async (newMessage) => {
+    if (role !== "professor") {
+      alert("Você não tem permissão para salvar avisos.");
+      setIsModalOpen(false);
+      return;
+    }
 
-    // Formata a data para o formato AAAA-MM-DD
-    const formattedDate = new Date(selectedDay).toISOString().split("T")[0];
-    const updatedDatas = datas.map((dia) =>
-      dia.id === selectedDay ? { ...dia, aviso: newMessage } : dia
-    );
-    setDatas(updatedDatas);
+    if (!selectedDay) {
+      console.error("Nenhum dia selecionado para salvar aviso.");
+      return;
+    }
+
+    // Formata a data do selectedDay (que é um objeto Date) para o formato YYYY-MM-DD
+    const formattedDate = selectedDay.toISOString().split("T")[0];
+    alert(`Salvando aviso para a data: ${formattedDate}`);
 
     const token = localStorage.getItem("token");
+    // A URL agora usa a data formatada, como o backend espera
     const url = `http://localhost:5000/professores/calendario/${formattedDate}/aviso`;
 
-    axios
-      .put(
+    try {
+      await axios.put(
         url,
-        { aviso: newMessage, data: formattedDate }, // Adiciona a data formatada no payload
+        { aviso: newMessage }, // Envia apenas o aviso no corpo da requisição
         { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then(() => {
-        console.log("Aviso atualizado com sucesso");
-      })
-      .catch((error) => {
-        console.error("Erro ao atualizar aviso", error);
-      });
-    setReload((prev) => !prev);
+      );
+      console.log("Aviso atualizado com sucesso");
+
+      // Atualiza o estado localmente após sucesso da API
+      setDatas((prevDatas) =>
+        prevDatas.map((dia) =>
+          dia.data === formattedDate ? { ...dia, aviso: newMessage } : dia
+        )
+      );
+
+      setIsModalOpen(false);
+      setReload((prev) => !prev);
+    } catch (error) {
+      console.error("Erro ao atualizar aviso", error);
+    }
   };
 
   <ModalInfo
@@ -409,16 +468,38 @@ const Calendario = () => {
         tileContent={({ date }) => {
           const dateString = date.toISOString().split("T")[0];
           const dia = datas.find((dia) => dia.data === dateString);
+          const isAniversario = aniversarios.includes(dateString);
 
           return (
-            dia?.aviso && dia.aviso.trim() !== "" && (
-              <Aviso
-                className="aviso"
-                onClick={() => handleAvisoClick(dia.aviso, dia.data)}
-              >
+            <>
+              {/* Ícone de aviso (!), posicionado centralmente na parte inferior */}
+              {dia?.aviso && dia.aviso.trim() !== "" && (
+                <Aviso
+                  onClick={() => handleAvisoClick(dia.aviso, dia.data)}
+                  style={{
+                    bottom: "4px",
+                    marginLeft: "5px",
+                    transform: "translateX(-50%)",
+                    zIndex: 10
+                  }}
+                />
+              )}
 
-              </Aviso>
-            )
+              {/* Ícone de bolo 🎂 no canto superior direito */}
+              {isAniversario && (
+                <FaCakeCandles
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "6px",
+                    color: "#9b59b6",
+                    fontSize: "1rem",
+                    zIndex: 10
+                  }}
+                  title="Aniversariante"
+                />
+              )}
+            </>
           );
         }}
       />

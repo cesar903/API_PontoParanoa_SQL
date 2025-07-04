@@ -401,58 +401,61 @@ exports.contarFaltas = async (req, res) => {
     const { mes, ano } = req.query;
 
     try {
-        const inicioMes = new Date(ano, mes - 1, 1);
-        const fimMes = new Date(ano, mes, 1);
+        // Define início do mês e início do próximo mês para filtro exclusivo
+        const inicioMes = new Date(Date.UTC(ano, mes - 1, 1));       // ex: 2025-07-01T00:00:00Z
+        const inicioProximoMes = new Date(Date.UTC(ano, mes, 1));    // ex: 2025-08-01T00:00:00Z
 
-        // Buscar os dias letivos no Calendário
+        // Buscar os dias letivos no Calendário com temAula = true
         const diasLetivos = await Calendario.findAll({
             where: {
                 data: {
-                    [Sequelize.Op.gte]: inicioMes,
-                    [Sequelize.Op.lte]: fimMes
+                    [Op.gte]: inicioMes,
+                    [Op.lt]: inicioProximoMes,   // menor que o próximo mês para evitar pegar dia a mais
                 },
-                temAula: true
+                temAula: true,
             }
         });
 
-        // Buscar os pontos aprovados do aluno
+        // Buscar os pontos aprovados do aluno dentro do intervalo
         const pontosAprovados = await Ponto.findAll({
             where: {
                 alunoId,
                 status: "aprovado",
                 entrada: {
-                    [Sequelize.Op.gte]: inicioMes,
-                    [Sequelize.Op.lte]: fimMes
-                }
+                    [Op.gte]: inicioMes,
+                    [Op.lt]: inicioProximoMes,
+                },
             }
         });
 
-        // Criar um Set com as datas de pontos aprovados
+        // Criar um Set com as datas dos pontos aprovados (YYYY-MM-DD)
         const datasPontos = new Set(
-            pontosAprovados.map((ponto) => ponto.entrada.toISOString().split("T")[0])
+            pontosAprovados.map(ponto => ponto.entrada.toISOString().split('T')[0])
         );
 
-        // Filtrar faltas
+        // Filtrar faltas (dias letivos que não possuem ponto aprovado)
         const faltas = diasLetivos
-            .map((dia) => {
-                const dataFormatada = dia.data; // já está no formato 'YYYY-MM-DD'
+            .map(dia => {
+                const dataFormatada = dia.data.toISOString ? dia.data.toISOString().split('T')[0] : dia.data;
+                // Se 'dia.data' for Date, converte, senão já é string
+
                 if (!datasPontos.has(dataFormatada)) {
                     return { data: dataFormatada, motivo: "Falta não justificada" };
                 }
                 return null;
             })
-            .filter((f) => f !== null);
-
+            .filter(f => f !== null);
 
         res.json({
             totalFaltas: faltas.length,
-            faltas: faltas
+            faltas
         });
     } catch (error) {
         console.error("Erro ao contar faltas:", error);
         res.status(500).json({ msg: "Erro ao contar faltas" });
     }
 };
+
 exports.excluirPonto = async (req, res) => {
     const { id } = req.params;
 
@@ -587,22 +590,22 @@ exports.adicionarFaltaJustificada = async (req, res) => {
 };
 
 exports.excluirFaltaJustificada = async (req, res) => {
-  const { faltaId } = req.params;
-  console.log("ID da falta a ser excluída:", faltaId);
+    const { faltaId } = req.params;
+    console.log("ID da falta a ser excluída:", faltaId);
 
-  try {
-    // Tenta deletar a falta com o ID recebido
-    const deletedCount = await Falta.destroy({
-      where: { id: faltaId } // ou 'faltaId' dependendo do nome da chave primária no seu model
-    });
+    try {
+        // Tenta deletar a falta com o ID recebido
+        const deletedCount = await Falta.destroy({
+            where: { id: faltaId } // ou 'faltaId' dependendo do nome da chave primária no seu model
+        });
 
-    if (deletedCount === 0) {
-      return res.status(404).json({ msg: "Falta não encontrada." });
+        if (deletedCount === 0) {
+            return res.status(404).json({ msg: "Falta não encontrada." });
+        }
+
+        res.status(200).json({ msg: "Falta excluída com sucesso." });
+    } catch (error) {
+        console.error("Erro ao excluir falta:", error);
+        res.status(500).json({ msg: "Erro ao excluir falta." });
     }
-
-    res.status(200).json({ msg: "Falta excluída com sucesso." });
-  } catch (error) {
-    console.error("Erro ao excluir falta:", error);
-    res.status(500).json({ msg: "Erro ao excluir falta." });
-  }
 };

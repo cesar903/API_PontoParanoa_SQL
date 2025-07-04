@@ -35,6 +35,7 @@ const ModalBackground = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 `;
 
 const ModalContainer = styled.div`
@@ -45,6 +46,7 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 15px;
+  z-index: 1100;
 `;
 
 const Input = styled.input`
