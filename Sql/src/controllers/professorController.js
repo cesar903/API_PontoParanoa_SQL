@@ -425,7 +425,8 @@ exports.contarFaltas = async (req, res) => {
                     [Op.gte]: inicioMes,
                     [Op.lt]: inicioProximoMes,
                 },
-            }
+            }  
+            
         });
 
         // Criar um Set com as datas dos pontos aprovados (YYYY-MM-DD)
