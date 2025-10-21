@@ -21,7 +21,7 @@ app.get("/test", (req, res) => {
 });
 
 // Inicializa o banco e inicia o servidor
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ;
 
 connectDB()
   .then(() => {
