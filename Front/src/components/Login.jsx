@@ -113,7 +113,7 @@ function Login() {
 
         try {
             console.log('Tentando fazer login com:', email, password); // Logando os dados de login
-            const response = await axios.post('http://localhost:5000/auth/login', {
+            const response = await axios.post('https://escolinha.paranoa.com.br/APIEscolinha2/auth/login', {
                 email: email,
                 senha: password,
             });

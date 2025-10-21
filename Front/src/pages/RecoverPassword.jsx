@@ -90,7 +90,7 @@ function RecoverPassword() {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/auth/recuperar-senha', { email });
+            const response = await axios.post('https://escolinha.paranoa.com.br/APIEscolinha2/auth/recuperar-senha', { email });
 
             if (response.status === 200) {
                 setSuccess(true);

@@ -92,7 +92,7 @@ function ManualPointTeacher() {
         const fetchAlunos = async () => {
             setLoading(true);
             try {
-                const response = await axios.get("http://localhost:5000/professores/alunos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/professores/alunos", {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
@@ -137,7 +137,7 @@ function ManualPointTeacher() {
         setLoading(true);
         try {
             await axios.post(
-                "http://localhost:5000/professores/ponto/manual",
+                "https://escolinha.paranoa.com.br/APIEscolinha2/professores/ponto/manual",
                 { alunoId, dia, chegada, saida },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

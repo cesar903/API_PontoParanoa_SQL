@@ -95,7 +95,7 @@ function StudantList() {
             try {
                 const token = localStorage.getItem("token");
                 const response = await axios.get(
-                    "http://localhost:5000/professores/pontos/pendentes",
+                    "https://escolinha.paranoa.com.br/APIEscolinha2/professores/pontos/pendentes",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -129,7 +129,7 @@ function StudantList() {
         try {
             const token = localStorage.getItem("token");
             await axios.patch(
-                `http://localhost:5000/professores/ponto/${id}`,
+                `https://escolinha.paranoa.com.br/APIEscolinha2/professores/ponto/${id}`,
                 { status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -182,7 +182,7 @@ function StudantList() {
                 setLoading(true);
                 try {
                     await axios.put(
-                        `http://localhost:5000/professores/ponto/finalizar-ponto/${id}`,
+                        `https://escolinha.paranoa.com.br/APIEscolinha2/professores/ponto/finalizar-ponto/${id}`,
                         { latitude, longitude }, // Envia a localização do professor
                         { headers: { Authorization: `Bearer ${token}` } }
                     );

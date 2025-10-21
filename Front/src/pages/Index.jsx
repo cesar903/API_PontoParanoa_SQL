@@ -132,7 +132,7 @@ function Index() {
         if (!isModalOpen) {
             try {
                 const token = localStorage.getItem("token");
-                const response = await axios.get("http://localhost:5000/me", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/me", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserData(response.data);

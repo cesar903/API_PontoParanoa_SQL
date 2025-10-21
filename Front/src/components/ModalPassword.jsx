@@ -93,7 +93,7 @@ const ModalPassword = ({ onClose, userId }) => {
         setLoading(true);
         try {
             await axios.put(
-                `http://localhost:5000/me/password`,
+                `https://escolinha.paranoa.com.br/APIEscolinha2/me/password`,
                 { currentPassword, newPassword },
                 { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
             );

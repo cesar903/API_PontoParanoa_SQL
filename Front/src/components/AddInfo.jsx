@@ -103,7 +103,7 @@ function AddInfo() {
             const dataFormatada = formData.dia;
 
             await axios.patch(
-                `http://localhost:5000/professores/calendario/${encodeURIComponent(dataFormatada)}/aviso`,
+                `https://escolinha.paranoa.com.br/APIEscolinha2/professores/calendario/${encodeURIComponent(dataFormatada)}/aviso`,
                 { aviso: formData.aviso },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

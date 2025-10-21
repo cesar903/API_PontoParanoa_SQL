@@ -44,7 +44,7 @@ const Graph = () => {
         const fetchData = async () => {
             try {
                 const headers = { Authorization: `Bearer ${token}` };
-                const response = await axios.get("http://localhost:5000/alunos/pontos/com-alunos", { headers });
+                const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/alunos/pontos/com-alunos", { headers });
 
                 // Mapear e filtrar os dados conforme o turno selecionado
                 const alunosArray = Object.entries(response.data)

@@ -80,7 +80,7 @@ function Verification() {
       }
 
       try {
-        const response = await axios.get("http://localhost:5000/alunos/pontos", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/alunos/pontos", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

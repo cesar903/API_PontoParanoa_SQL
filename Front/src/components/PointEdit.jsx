@@ -84,7 +84,7 @@ function PointEdit({ isOpen, onClose, ponto, atualizarLista }) {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:5000/professores/ponto/editar/${ponto.id}`,
+        `https://escolinha.paranoa.com.br/APIEscolinha2/professores/ponto/editar/${ponto.id}`,
         { entrada, saida },
         { headers: { Authorization: `Bearer ${token}` } }
       );

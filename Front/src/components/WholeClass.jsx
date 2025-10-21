@@ -169,7 +169,7 @@ const WholeClass = ({ isOpen, onClose }) => {
             }
             setLoading(true);
             try {
-                const response = await axios.get("http://localhost:5000/professores/alunos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/professores/alunos", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -203,7 +203,7 @@ const WholeClass = ({ isOpen, onClose }) => {
             }
 
             axios
-                .delete(`http://localhost:5000/professores/alunos/${confirmation.alunoId}`, {
+                .delete(`https://escolinha.paranoa.com.br/APIEscolinha2/professores/alunos/${confirmation.alunoId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then(() => {
@@ -241,7 +241,7 @@ const WholeClass = ({ isOpen, onClose }) => {
         }
         setLoading(true);
         try {
-            await axios.put(`http://localhost:5000/professores/alunos/${selectedAluno.id}`, selectedAluno, {
+            await axios.put(`https://escolinha.paranoa.com.br/APIEscolinha2/professores/alunos/${selectedAluno.id}`, selectedAluno, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
