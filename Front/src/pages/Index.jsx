@@ -1,13 +1,14 @@
-import { Link, Outlet, useLocation } from "react-router-dom"; 
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { FaUserCircle, FaUserPlus } from "react-icons/fa";
+import { FaUserCircle, FaUserPlus, FaRegComments } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import styled from "styled-components";
 import { jwtDecode } from "jwt-decode";
 import User from "../components/User";
 import Verification from "./Verification";
 import StudantList from "../components/StudantList";
+import MessageModal from "../components/MessageModal";
 
 
 const Title = styled.span`
@@ -122,11 +123,13 @@ const ReportButton = styled(Link)`
 
 
 function Index() {
-    const location = useLocation(); 
+    const location = useLocation();
     const [role, setRole] = useState(null);
     const [nome, setNome] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [userData, setUserData] = useState(null);
+    const [showMessagesModal, setShowMessagesModal] = useState(false);
+
 
     const toggleModal = async () => {
         if (!isModalOpen) {
@@ -169,6 +172,11 @@ function Index() {
                     <div onClick={toggleModal} style={{ cursor: "pointer" }}>
                         <UserIcon />
                     </div>
+
+                    <div onClick={() => setShowMessagesModal(true)} style={{ cursor: "pointer" }}>
+                        <FaRegComments size={28} color="var(--DwYellow)" />
+                    </div>
+
                     {role == "professor" ?
                         <>
                             <ReportButton to="/index/register" $active={location.pathname === "/index/register"}>
@@ -210,6 +218,39 @@ function Index() {
                     <Outlet />
                 )}
             </div>
+
+            {showMessagesModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                    }}
+                    onClick={() => setShowMessagesModal(false)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: "white",
+                            padding: "20px",
+                            borderRadius: "10px",
+                            width: "90%",
+                            maxWidth: "400px",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3>Enviar mensagem</h3>
+                        <MessageModal onClose={() => setShowMessagesModal(false)} />
+                    </div>
+                </div>
+            )}
+
         </>
     );
 }

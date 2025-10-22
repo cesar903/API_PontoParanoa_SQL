@@ -12,6 +12,7 @@ const Container = styled.div`
   align-items: stretch; 
   background-color: #f8f8f8;
   padding-top: 5rem;
+  height: 100vh;
 `;
 
 const ContainerSwitche = styled.div`

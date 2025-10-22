@@ -6,6 +6,7 @@ const app = express();
 
 require("./src/models/associations");
 
+
 // Middlewares
 app.use(express.json());
 app.use(cors({ origin: "*" }));
@@ -15,6 +16,10 @@ app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/alunos", require("./src/routes/alunoRoutes"));
 app.use("/api/professores", require("./src/routes/professorRoutes"));
 app.use("/api/me", require("./src/routes/userRoutes"));
+app.use("/api/mensagens", require("./src/routes/mensagemRoutes"));
+app.use("/api/contatos", require("./src/routes/contatoRoutes"));
+
+
 
 app.get("/api/test", (req, res) => {
   res.json({ msg: "✅ API conectada com sucesso!" });
@@ -25,7 +30,7 @@ const PORT = process.env.PORT ;
 
 connectDB()
   .then(() => {
-    return sequelize.sync({ alter: true }); // <-- aqui ele cria/atualiza as tabelas
+    return sequelize.sync();
   })
   .then(() => {
     console.log("🗄️ Banco de dados conectado com sucesso!");

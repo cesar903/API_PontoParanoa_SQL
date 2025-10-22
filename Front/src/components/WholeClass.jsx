@@ -202,8 +202,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                 return;
             }
 
-            axios
-                .delete(`https://escolinha.paranoa.com.br/api/professores/alunos/${confirmation.alunoId}`, {
+            axios.delete(`https://escolinha.paranoa.com.br/api/professores/alunos/${confirmation.alunoId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then(() => {
@@ -227,7 +226,7 @@ const WholeClass = ({ isOpen, onClose }) => {
 
         setSelectedAluno({
             ...aluno,
-            nasc: dataFormatada, 
+            nasc: dataFormatada,
         });
     };
 

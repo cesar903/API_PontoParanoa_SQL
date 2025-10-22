@@ -6,7 +6,7 @@ const User = sequelize.define("User", {
   email: { 
     type: DataTypes.STRING, 
     allowNull: false, 
-    unique: true // Indica que o campo 'email' deve ser único no banco de dados
+    unique: true // ✅ suficiente
   },
   senha: { type: DataTypes.STRING, allowNull: false },
   cpf: { type: DataTypes.STRING, allowNull: false },
@@ -19,13 +19,7 @@ const User = sequelize.define("User", {
 }, {
   tableName: "users",
   timestamps: false,
-  // Garantir que o índice único seja aplicado corretamente
-  indexes: [
-    {
-      unique: true, // Garante que 'email' seja único
-      fields: ['email'] // Define que o campo de email terá índice único
-    }
-  ]
 });
+
 
 module.exports = User;
