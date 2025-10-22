@@ -141,7 +141,7 @@ function CheckInOut() {
       }
 
       try {
-        const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/alunos/pontos", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/pontos", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -185,7 +185,7 @@ function CheckInOut() {
               const confirmExit = window.confirm("Você tem certeza de que deseja encerrar o check-in? Não poderá adicionar um novo check-in durante o dia.");
               if (confirmExit) {
                 await axios.post(
-                  "https://escolinha.paranoa.com.br/APIEscolinha2/alunos/checkout",
+                  "https://escolinha.paranoa.com.br/api/alunos/checkout",
                   { latitude, longitude },
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -193,7 +193,7 @@ function CheckInOut() {
               }
             } else {
               await axios.post(
-                "https://escolinha.paranoa.com.br/APIEscolinha2/alunos/ponto",
+                "https://escolinha.paranoa.com.br/api/alunos/ponto",
                 { latitude, longitude },
                 { headers: { Authorization: `Bearer ${token}` } }
               );

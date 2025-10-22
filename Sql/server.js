@@ -11,12 +11,12 @@ app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 // Rotas
-app.use("/auth", require("./src/routes/authRoutes"));
-app.use("/alunos", require("./src/routes/alunoRoutes"));
-app.use("/professores", require("./src/routes/professorRoutes"));
-app.use("/me", require("./src/routes/userRoutes"));
+app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/alunos", require("./src/routes/alunoRoutes"));
+app.use("/api/professores", require("./src/routes/professorRoutes"));
+app.use("/api/me", require("./src/routes/userRoutes"));
 
-app.get("/test", (req, res) => {
+app.get("/api/test", (req, res) => {
   res.json({ msg: "✅ API conectada com sucesso!" });
 });
 

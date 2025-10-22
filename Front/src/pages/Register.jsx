@@ -110,7 +110,7 @@ function Register() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "https://escolinha.paranoa.com.br/APIEscolinha2/professores/usuarios",
+        "https://escolinha.paranoa.com.br/api/professores/usuarios",
         { nome: name, email, senha: password, nasc, cpf, endereco, turma, role },
         { headers: { Authorization: `Bearer ${token}` } }
       );

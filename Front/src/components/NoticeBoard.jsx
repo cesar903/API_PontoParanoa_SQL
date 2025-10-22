@@ -37,7 +37,7 @@ const NoticeBoard = () => {
         const fetchAvisos = async () => {
             setLoading(true);
             try {
-                const response = await axios.get("https://escolinha.paranoa.com.br/APIEscolinha2/alunos/avisos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/avisos", {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },

@@ -113,10 +113,11 @@ function Login() {
 
         try {
             console.log('Tentando fazer login com:', email, password); // Logando os dados de login
-            const response = await axios.post('https://escolinha.paranoa.com.br/APIEscolinha2/auth/login', {
+            const response = await axios.post('https://escolinha.paranoa.com.br/api/auth/login', {
                 email: email,
                 senha: password,
             });
+            console.log(response)
 
             localStorage.setItem('token', response.data.token);
             navigate("/index/calendar");
