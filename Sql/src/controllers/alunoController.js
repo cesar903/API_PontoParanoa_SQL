@@ -41,12 +41,12 @@ exports.fazerCheckin = async (req, res) => {
 
         const RAIO_PERMITIDO_METROS = 200;
 
-        if (!latitude || !longitude)
-            return res.status(400).json({ msg: "Localização não fornecida." });
+        // if (!latitude || !longitude)
+        //     return res.status(400).json({ msg: "Localização não fornecida." });
 
-        const distancia = calcularDistancia(latitude, longitude, ESCOLA_LATITUDE, ESCOLA_LONGITUDE);
-        if (distancia > RAIO_PERMITIDO_METROS)
-            return res.status(403).json({ msg: "Check-in permitido apenas dentro da escola." });
+        // const distancia = calcularDistancia(latitude, longitude, ESCOLA_LATITUDE, ESCOLA_LONGITUDE);
+        // if (distancia > RAIO_PERMITIDO_METROS)
+        //     return res.status(403).json({ msg: "Check-in permitido apenas dentro da escola." });
 
         const agora = new Date();
         const hoje = new Date();
@@ -70,22 +70,22 @@ exports.fazerCheckin = async (req, res) => {
         const horaAtual = agora.getHours();
         const minutosAtuais = agora.getMinutes();
 
-        if (aluno.turma === "manha") {
-            horaInicio = 11; minutoInicio = 0;
-            horaFim = 23; minutoFim = 0;
-        } else if (aluno.turma === "tarde") {
-            horaInicio = 16; minutoInicio = 30;
-            horaFim = 17; minutoFim = 30;
-        } else {
-            return res.status(400).json({ msg: "Turma inválida." });
-        }
+        // if (aluno.turma === "manha") {
+        //     horaInicio = 11; minutoInicio = 0;
+        //     horaFim = 23; minutoFim = 0;
+        // } else if (aluno.turma === "tarde") {
+        //     horaInicio = 16; minutoInicio = 30;
+        //     horaFim = 17; minutoFim = 30;
+        // } else {
+        //     return res.status(400).json({ msg: "Turma inválida." });
+        // }
 
-        const dentroDoHorario =
-            (horaAtual > horaInicio || (horaAtual === horaInicio && minutosAtuais >= minutoInicio)) &&
-            (horaAtual < horaFim || (horaAtual === horaFim && minutosAtuais <= minutoFim));
+        // const dentroDoHorario =
+        //     (horaAtual > horaInicio || (horaAtual === horaInicio && minutosAtuais >= minutoInicio)) &&
+        //     (horaAtual < horaFim || (horaAtual === horaFim && minutosAtuais <= minutoFim));
 
-        if (!dentroDoHorario)
-            return res.status(403).json({ msg: "Check-in permitido apenas no horário correto." });
+        // if (!dentroDoHorario)
+        //     return res.status(403).json({ msg: "Check-in permitido apenas no horário correto." });
 
         await Ponto.create({
             alunoId: req.user.id,

@@ -1,18 +1,17 @@
+require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
-// Configuração manual (sem .env)
 const sequelize = new Sequelize(
-  "escolinhaparanoa_escola_digital", // nome do banco
-  "escolinhaparanoa",                // usuário
-  "p4Ran0aCp4nel",                   // senha
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
   {
-    host: "localhost",
+    host: process.env.DB_HOST,
     dialect: "mysql",
-    logging: false, // deixa true se quiser ver os logs SQL
+    logging: false,
   }
 );
 
-// Função para testar a conexão
 const connectDB = async () => {
   try {
     await sequelize.authenticate();

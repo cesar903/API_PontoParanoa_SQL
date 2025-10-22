@@ -366,6 +366,7 @@ function Report() {
                     <option value="todas">Todas</option>
                     <option value="manha">Manhã</option>
                     <option value="tarde">Tarde</option>
+                    <option value="karate">Karatê</option>
                 </SeletorTurma>
             </SeletorContainer>
 

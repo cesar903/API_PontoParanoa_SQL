@@ -12,7 +12,7 @@ const User = sequelize.define("User", {
   cpf: { type: DataTypes.STRING, allowNull: false },
   nasc: { type: DataTypes.DATEONLY },
   endereco: { type: DataTypes.STRING, allowNull: false },
-  turma: { type: DataTypes.ENUM("manha", "tarde"), allowNull: false },
+  turma: { type: DataTypes.ENUM("manha", "tarde", "karate"), allowNull: false },
   role: { type: DataTypes.ENUM("aluno", "professor"), allowNull: false },
   resetPasswordToken: DataTypes.STRING,
   resetPasswordExpires: DataTypes.DATE,

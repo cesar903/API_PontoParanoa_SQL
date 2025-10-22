@@ -129,7 +129,7 @@ function CheckInOut() {
     return () => clearInterval(timer);
   }, []);
 
-  
+
   useEffect(() => {
     const fetchPonto = async () => {
       setLoading(true);
@@ -154,18 +154,79 @@ function CheckInOut() {
       } catch (error) {
         console.error("Erro ao buscar o estado do check-in:", error);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
 
     fetchPonto();
   }, []);
 
-  
+  // Envio com localização
+  // const handleClick = async () => {
+  //   if (processing) return; // Impede múltiplos envios
+  //   setLoading(true);
+  //   setProcessing(true); 
+
+  //   const token = localStorage.getItem("token");
+  //   if (!token) {
+  //     alert("Você não está autenticado. Faça login novamente.");
+  //     setProcessing(false);
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   if ("geolocation" in navigator) {
+  //     navigator.geolocation.getCurrentPosition(
+  //       async (position) => {
+  //         const { latitude, longitude } = position.coords;
+  //         setLoading(true);
+  //         try {
+  //           if (isOn) {
+  //             const confirmExit = window.confirm("Você tem certeza de que deseja encerrar o check-in? Não poderá adicionar um novo check-in durante o dia.");
+  //             if (confirmExit) {
+  //               await axios.post(
+  //                 "https://escolinha.paranoa.com.br/api/alunos/checkout",
+  //                 { latitude, longitude },
+  //                 { headers: { Authorization: `Bearer ${token}` } }
+  //               );
+  //               setIsOn(false);
+  //             }
+  //           } else {
+  //             await axios.post(
+  //               "https://escolinha.paranoa.com.br/api/alunos/ponto",
+  //               { latitude, longitude },
+  //               { headers: { Authorization: `Bearer ${token}` } }
+  //             );
+  //             setIsOn(true);
+  //           }
+  //         } catch (error) {
+  //           console.error("Erro ao realizar check-in/out:", error);
+  //           alert(error?.response?.data?.msg || "Não foi possível realizar check-in/out.");
+  //         } finally {
+  //           setProcessing(false); 
+  //           setLoading(false); 
+
+  //         }
+  //       },
+  //       (error) => {
+  //         alert("Erro ao acessar a localização. Ative o GPS e tente novamente.");
+  //         console.error(error);
+  //         setProcessing(false);
+  //         setLoading(false);
+  //       }
+  //     );
+  //   } else {
+  //     alert("Geolocalização não suportada pelo seu navegador.");
+  //     setProcessing(false);
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleClick = async () => {
-    if (processing) return; // Impede múltiplos envios
+    if (processing) return;
     setLoading(true);
-    setProcessing(true); 
+    setProcessing(true);
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -175,48 +236,35 @@ function CheckInOut() {
       return;
     }
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          setLoading(true);
-          try {
-            if (isOn) {
-              const confirmExit = window.confirm("Você tem certeza de que deseja encerrar o check-in? Não poderá adicionar um novo check-in durante o dia.");
-              if (confirmExit) {
-                await axios.post(
-                  "https://escolinha.paranoa.com.br/api/alunos/checkout",
-                  { latitude, longitude },
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-                setIsOn(false);
-              }
-            } else {
-              await axios.post(
-                "https://escolinha.paranoa.com.br/api/alunos/ponto",
-                { latitude, longitude },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              setIsOn(true);
-            }
-          } catch (error) {
-            console.error("Erro ao realizar check-in/out:", error);
-            alert(error?.response?.data?.msg || "Não foi possível realizar check-in/out.");
-          } finally {
-            setProcessing(false); 
-            setLoading(false); 
-            
-          }
-        },
-        (error) => {
-          alert("Erro ao acessar a localização. Ative o GPS e tente novamente.");
-          console.error(error);
-          setProcessing(false);
-          setLoading(false);
+    // Localização fixa 
+    const latitude = 0;
+    const longitude = 0;
+
+    try {
+      if (isOn) {
+        const confirmExit = window.confirm(
+          "Você tem certeza de que deseja encerrar o check-in? Não poderá adicionar um novo check-in durante o dia."
+        );
+        if (confirmExit) {
+          await axios.post(
+            "https://escolinha.paranoa.com.br/api/alunos/checkout",
+            { latitude, longitude },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setIsOn(false);
         }
-      );
-    } else {
-      alert("Geolocalização não suportada pelo seu navegador.");
+      } else {
+        await axios.post(
+          "https://escolinha.paranoa.com.br/api/alunos/ponto",
+          { latitude, longitude },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsOn(true);
+      }
+    } catch (error) {
+      console.error("Erro ao realizar check-in/out:", error);
+      alert(error?.response?.data?.msg || "Não foi possível realizar check-in/out.");
+    } finally {
       setProcessing(false);
       setLoading(false);
     }
@@ -243,7 +291,7 @@ function CheckInOut() {
 
       {isOn ? "" : <ManualPoint />}
 
-      <Graph />
+      {/* <Graph /> */}
 
     </Container>
   );

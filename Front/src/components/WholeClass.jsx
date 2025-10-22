@@ -286,6 +286,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                     <option value="todos">Todos</option>
                     <option value="manha">Manhã</option>
                     <option value="tarde">Tarde</option>
+                    <option value="karate">Karatê</option>
                 </Select>
 
 
@@ -392,6 +393,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                                     >
                                         <option value="manha">Manhã</option>
                                         <option value="tarde">Tarde</option>
+                                        <option value="karate">Karatê</option>
                                     </Select>
                                 </Label>
 

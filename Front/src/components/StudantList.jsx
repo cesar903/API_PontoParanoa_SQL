@@ -265,7 +265,7 @@ function StudantList() {
                 </Table>
             )}
 
-            <Graph />
+            {/* <Graph /> */}
             
             <ManualPointTeacher closeModal={closeModal} />
 

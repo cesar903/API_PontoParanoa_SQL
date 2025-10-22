@@ -121,6 +121,7 @@ const Graph = () => {
             <Select value={turnoSelecionado} onChange={(e) => setTurnoSelecionado(e.target.value)}>
                 <option value="manha">Manhã</option>
                 <option value="tarde">Tarde</option>
+                <option value="karate">Karatê</option>
             </Select>
 
             {/* Gráfico de barras */}

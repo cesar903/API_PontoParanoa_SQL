@@ -187,6 +187,7 @@ function Register() {
           <Select value={turma} onChange={(e) => setTurma(e.target.value)}>
             <option value="manha">Manhã</option>
             <option value="tarde">Tarde</option>
+            <option value="karate">Karatê</option>
           </Select>
           <Select value={role} onChange={(e) => setRole(e.target.value)}>
             <option value="professor">Professor</option>
