@@ -11,7 +11,7 @@ const Falta = sequelize.define("Falta", {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: "Users", // ou o nome correto da tabela de usuários
+      model: "users", 
       key: "id",
     },
     onDelete: "CASCADE",
@@ -29,7 +29,7 @@ const Falta = sequelize.define("Falta", {
     defaultValue: "",
   },
 }, {
-  tableName: "faltas", // nome da tabela no banco
+  tableName: "faltas", 
   timestamps: false,
 });
 

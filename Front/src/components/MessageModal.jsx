@@ -170,22 +170,26 @@ export default function MessageModal({ onClose }) {
         carregarUsuarios();
     }, [token]);
 
-    // Carregar mensagens com o contato selecionado
+
+    
     useEffect(() => {
-        async function carregarMensagens() {
-            if (!destinatarioId) return;
+        if (!destinatarioId) return;
+
+        const interval = setInterval(async () => {
             try {
                 const res = await axios.get(
                     `https://escolinha.paranoa.com.br/api/mensagens/${destinatarioId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setMensagens(res.data);
-            } catch (error) {
-                console.error("Erro ao carregar mensagens:", error);
+            } catch (err) {
+                console.error("Erro ao atualizar mensagens:", err);
             }
-        }
-        carregarMensagens();
-    }, [destinatarioId]);
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [destinatarioId, token]);
+
 
 
     // Enviar nova mensagem
