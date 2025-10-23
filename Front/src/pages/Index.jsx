@@ -129,6 +129,30 @@ function Index() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [userData, setUserData] = useState(null);
     const [showMessagesModal, setShowMessagesModal] = useState(false);
+    const [naoLidasTotal, setNaoLidasTotal] = useState(0);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const buscarNaoLidas = async () => {
+            try {
+                const res = await axios.get(
+                    "https://escolinha.paranoa.com.br/api/mensagens/nao-lidas",
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                // res.data.contador é um objeto com {usuarioId: qtd}
+                const total = Object.values(res.data.contador || {}).reduce((acc, v) => acc + v, 0);
+                setNaoLidasTotal(total);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        buscarNaoLidas();
+        const interval = setInterval(buscarNaoLidas, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
 
     const toggleModal = async () => {
@@ -174,7 +198,25 @@ function Index() {
                     </div>
 
                     <div onClick={() => setShowMessagesModal(true)} style={{ cursor: "pointer" }}>
-                        <FaRegComments size={28} color="var(--DwYellow)" />
+                        <div style={{ position: "relative", cursor: "pointer" }} onClick={() => setShowMessagesModal(true)}>
+                            <FaRegComments size={28} color="var(--DwYellow)" />
+                             {naoLidasTotal > 0 && (
+                            <span style={{
+                                position: "absolute",
+                                top: 5,
+                                right: -5,
+                                background: "red",
+                                color: "#fff",
+                                borderRadius: "50%",
+                                padding: "2px 6px",
+                                fontSize: "10px",
+                                fontWeight: "bold"
+                            }}>
+                                {naoLidasTotal}
+                            </span>
+                             )}
+                        </div>
+
                     </div>
 
                     {role == "professor" ?
