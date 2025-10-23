@@ -140,7 +140,7 @@ const PDFReport = ({ aluno, registros, mes, ano, observacao, faltas, faltasJusti
                 </View>
 
                 <View style={styles.infoSection}>
-                    <Text>Aluna: <Text style={{ fontWeight: "bold" }}>{aluno.nome}</Text></Text>
+                    <Text>Aluno(a): <Text style={{ fontWeight: "bold" }}>{aluno.nome}</Text></Text>
                     <Text>Email: <Text style={{ fontWeight: "bold" }}>{aluno.email}</Text></Text>
                     <Text>Faltas Justificadas:</Text>
                     <View>

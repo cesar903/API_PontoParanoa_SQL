@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { io } from "socket.io-client";
 import styled from "styled-components";
 
 
@@ -152,6 +151,16 @@ export default function MessageModal({ onClose }) {
     const [conteudo, setConteudo] = useState("");
     const [loadingMsgs, setLoadingMsgs] = useState(false);
     const token = localStorage.getItem("token");
+    const [naoLidas, setNaoLidas] = useState({});
+    const chatMessagesRef = useRef(null);
+
+    const scrollToBottom = () => {
+        const container = chatMessagesRef.current;
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    };
+
 
     // Buscar lista de usuários (alunos)
     useEffect(() => {
@@ -171,7 +180,6 @@ export default function MessageModal({ onClose }) {
     }, [token]);
 
 
-    
     useEffect(() => {
         if (!destinatarioId) return;
 
@@ -190,8 +198,6 @@ export default function MessageModal({ onClose }) {
         return () => clearInterval(interval);
     }, [destinatarioId, token]);
 
-
-
     // Enviar nova mensagem
     async function enviarMensagem() {
         if (!destinatarioId || !conteudo.trim()) return;
@@ -203,11 +209,104 @@ export default function MessageModal({ onClose }) {
             );
             setMensagens((prev) => [...prev, res.data]);
             setConteudo("");
+            setTimeout(scrollToBottom, 200)
         } catch (error) {
             console.error("Erro ao enviar mensagem:", error);
             alert("Erro ao enviar mensagem");
         }
     }
+
+    useEffect(() => {
+        if (!token) {
+            console.warn("Nenhum token encontrado — usuário não autenticado.");
+            return;
+        }
+
+        const buscarNaoLidas = async () => {
+            try {
+                const res = await axios.get(
+                    "https://escolinha.paranoa.com.br/api/mensagens/nao-lidas",
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+                setNaoLidas(res.data.contador || {});
+            } catch (err) {
+                console.error("Erro ao buscar mensagens não lidas:", err.response?.data || err);
+            }
+        };
+
+        buscarNaoLidas();
+
+        const interval = setInterval(buscarNaoLidas, 3000);
+
+        return () => clearInterval(interval);
+    }, [token]);
+
+
+
+
+
+    async function abrirConversa(id) {
+        setDestinatarioId(id);
+
+        try {
+            const res = await axios.put(
+                `https://escolinha.paranoa.com.br/api/mensagens/marcar-como-lidas/${id}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setNaoLidas((prev) => {
+                const novo = { ...prev };
+                delete novo[id];
+                return novo;
+            });
+
+            // Espera as mensagens serem carregadas antes de rolar
+            const msgsRes = await axios.get(
+                `https://escolinha.paranoa.com.br/api/mensagens/${id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setMensagens(msgsRes.data);
+
+            // Rola para baixo apenas **uma vez**
+            setTimeout(scrollToBottom, 100);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+
+
+    // Marca automaticamente como lidas enquanto a conversa está aberta
+    useEffect(() => {
+        if (!destinatarioId || !token) return;
+
+        const marcarLidas = async () => {
+            try {
+                await axios.put(
+                    `https://escolinha.paranoa.com.br/api/mensagens/marcar-como-lidas/${destinatarioId}`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            } catch (error) {
+                console.error("Erro ao marcar mensagens como lidas automaticamente:", error);
+            }
+        };
+
+        // Marca imediatamente
+        marcarLidas();
+
+        // E continua marcando a cada 5 segundos enquanto o chat está aberto
+        const interval = setInterval(marcarLidas, 1000);
+
+        return () => clearInterval(interval);
+    }, [destinatarioId, token]);
+
+
+
 
     return (
         <Overlay>
@@ -223,10 +322,24 @@ export default function MessageModal({ onClose }) {
                                 <UserItem
                                     key={u.id}
                                     $active={destinatarioId === u.id}
-                                    onClick={() => setDestinatarioId(u.id)}
+                                    onClick={() => abrirConversa(u.id)}
                                 >
                                     {u.nome}
+                                    {naoLidas && naoLidas[u.id] > 0 && (
+                                        <span style={{
+                                            marginLeft: "5px",
+                                            background: "var(--DwYellow)",
+                                            color: "white",
+                                            borderRadius: "50%",
+                                            padding: "2px 5px",
+                                            fontSize: "9px"
+                                        }}>
+                                            {naoLidas[u.id]}
+                                        </span>
+                                    )}
+
                                 </UserItem>
+
                             ))}
                         </UserList>
                     )}
@@ -242,15 +355,12 @@ export default function MessageModal({ onClose }) {
                                     {usuarios.find((u) => u.id === destinatarioId)?.nome}
                                 </strong>
                             </ChatHeader>
-                            <ChatMessages>
+                            <ChatMessages ref={chatMessagesRef}>
                                 {loadingMsgs ? (
                                     <p>Carregando mensagens...</p>
                                 ) : mensagens.length > 0 ? (
                                     mensagens.map((m) => (
-                                        <Message
-                                            key={m.id}
-                                            $sent={m.remetenteId !== destinatarioId}
-                                        >
+                                        <Message key={m.id} $sent={m.remetenteId !== destinatarioId}>
                                             {m.conteudo}
                                         </Message>
                                     ))
@@ -258,6 +368,7 @@ export default function MessageModal({ onClose }) {
                                     <p>Nenhuma mensagem ainda.</p>
                                 )}
                             </ChatMessages>
+
 
                             <ChatInput>
                                 <TextArea
