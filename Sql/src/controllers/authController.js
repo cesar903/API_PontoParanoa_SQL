@@ -64,7 +64,7 @@ const solicitarRecuperacaoSenha = async (req, res) => {
       resetPasswordExpires: expira,
     });
 
-    const resetUrl = `https://escolinha.paranoa.com.br/resetar-senha/${token}`;
+    const resetUrl = `http://localhost:5000/resetar-senha/${token}`;
 
     const mailOptions = {
       to: user.email,

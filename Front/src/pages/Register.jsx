@@ -8,7 +8,7 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   background-color: #f8f9fa;
-  padding-bottom: 100px
+  padding-bottom: 100px;
 `;
 
 const FormWrapper = styled.div`
@@ -70,6 +70,64 @@ const Message = styled.p`
   color: ${(props) => (props.error ? "red" : "green")};
 `;
 
+const RadioWrapper = styled.div`
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 10px;
+`;
+
+const RadioLabel = styled.label`
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  user-select: none;
+  color: #333;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* círculo customizado */
+  span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+  }
+
+  /* círculo preenchido quando selecionado */
+  input:checked ~ span {
+    background-color: var(--DwYellow);
+    border-color: var(--DwYellow);
+  }
+
+  /* círculo interno */
+  span::after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+
+  input:checked ~ span::after {
+    display: block;
+    top: 4px;
+    left: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: black;
+  }
+`;
+
+
 function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -82,11 +140,13 @@ function Register() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [karate, setKarate] = useState(false);
+
 
   // Função para formatar o CPF
   const formatCpf = (value) => {
-    value = value.replace(/\D/g, ""); 
-    value = value.slice(0, 11); 
+    value = value.replace(/\D/g, "");
+    value = value.slice(0, 11);
 
     if (value.length > 9) {
       value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
@@ -107,17 +167,18 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const enviarKarate = turma === "karate" ? true : karate;
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "https://escolinha.paranoa.com.br/api/professores/usuarios",
-        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role },
+        "http://localhost:5000/api/professores/usuarios",
+        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, karate: enviarKarate},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setMessage(response.data.msg); 
+      setMessage(response.data.msg);
       setIsError(false);
-      
+
       setName("");
       setEmail("");
       setPassword("");
@@ -127,12 +188,23 @@ function Register() {
       setTurma("manha");
       setRole("aluno");
     } catch (error) {
-      setMessage(error.response?.data?.msg || "Erro ao cadastrar usuário"); 
-      setIsError(true); 
+      setMessage(error.response?.data?.msg || "Erro ao cadastrar usuário");
+      setIsError(true);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
+
+  const handleRoleChange = (e) => {
+    const newRole = e.target.value;
+    setRole(newRole);
+
+    // Se mudar para professor, reseta o karate
+    if (newRole === "professor") {
+      setKarate(false);
+    }
+  };
+
 
   return (
     <Container>
@@ -170,7 +242,7 @@ function Register() {
             required
           />
 
-          <Input 
+          <Input
             type="date"
             placeholder="Data de Nascimento"
             value={nasc}
@@ -184,18 +256,46 @@ function Register() {
             onChange={(e) => setEndereco(e.target.value)}
             required
           />
-          <Select value={turma} onChange={(e) => setTurma(e.target.value)}>
-            <option value="manha">Manhã</option>
-            <option value="tarde">Tarde</option>
-            <option value="karate">Karatê</option>
-          </Select>
-          <Select value={role} onChange={(e) => setRole(e.target.value)}>
+
+          <Select value={role} onChange={handleRoleChange}>
             <option value="professor">Professor</option>
             <option value="aluno">Aluno</option>
           </Select>
+
+
+          {(role != "professor") && (
+            <Select value={turma} onChange={(e) => setTurma(e.target.value)}>
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="karate">Karatê</option>
+            </Select>
+          )}
+
+          {((turma === "manha" || turma === "tarde") && role !== "professor") && (
+            <>
+            Optou pelo Karatê?
+              <RadioWrapper>
+                
+                <RadioLabel>
+                  Sim
+                  <input type="radio" name="karate" value="sim" onChange={() => setKarate(true)} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Não
+                  <input type="radio" name="karate" value="nao" onChange={() => setKarate(false)} defaultChecked />
+                  <span></span>
+                </RadioLabel>
+              </RadioWrapper>
+
+            </>
+          )}
+
+
           <Button type="submit">Cadastrar</Button>
         </form>
-        {message && <Message error={isError}>{message}</Message>} 
+        {message && <Message error={isError}>{message}</Message>}
       </FormWrapper>
     </Container>
   );

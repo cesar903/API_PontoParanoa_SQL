@@ -34,22 +34,24 @@ exports.listarPontosPendentes = async (req, res) => {
 
 exports.cadastrarUsuario = async (req, res) => {
     // Desestruturação dos dados enviados no corpo da requisição
-    const { nome, email, senha, nasc, cpf, endereco, turma, role } = req.body;
+    const { nome, email, senha, nasc, cpf, endereco, turma, role, karate } = req.body;
 
     // Verificação para garantir que todos os campos obrigatórios foram preenchidos
-    if (!nome || !email || !senha || !nasc || !role || !endereco || !cpf || !turma) {
+    if (!nome || !email || !senha || !nasc || !role || !endereco || !cpf) {
         return res.status(400).json({ msg: "Todos os campos são obrigatórios" });
     }
 
     try {
         // Verifica se já existe um usuário com o e-mail informado
-        const usuarioExistente = await User.findOne({ where: { email } });  // Corrigido aqui!
+        const usuarioExistente = await User.findOne({ where: { email } });  
         if (usuarioExistente) {
             return res.status(400).json({ msg: "E-mail já cadastrado" });
         }
 
         // Criptografa a senha usando bcrypt antes de salvar no banco de dados
         const senhaHash = await bcrypt.hash(senha, 10);
+
+        console.log(karate)
 
         // Cria um novo usuário com os dados fornecidos
         const novoUsuario = new User({
@@ -60,7 +62,8 @@ exports.cadastrarUsuario = async (req, res) => {
             cpf,
             endereco,
             turma,
-            role
+            role,
+            karate
         });
 
         // Salva o novo usuário no banco de dados
@@ -369,7 +372,7 @@ exports.excluirAluno = async (req, res) => {
 
 exports.atualizarAluno = async (req, res) => {
     const { id } = req.params;
-    const { nome, email, nasc, cpf, endereco, turma } = req.body;
+    const { nome, email, nasc, cpf, endereco, turma, karate } = req.body;
 
     try {
         // Buscar o aluno pelo id
@@ -378,6 +381,8 @@ exports.atualizarAluno = async (req, res) => {
             return res.status(404).json({ msg: "Aluno não encontrado" });
         }
 
+        console.log(karate)
+
         // Atualizar os campos que foram enviados
         if (nome) aluno.nome = nome;
         if (email) aluno.email = email;
@@ -385,6 +390,7 @@ exports.atualizarAluno = async (req, res) => {
         if (cpf) aluno.cpf = cpf;
         if (endereco) aluno.endereco = endereco;
         if (turma) aluno.turma = turma;
+        if (turma) aluno.karate = karate;
 
         // Salvar as alterações
         await aluno.save();

@@ -52,15 +52,15 @@ exports.fazerCheckin = async (req, res) => {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
-        const checkinExistente = await Ponto.findOne({
-            where: {
-                alunoId: req.user.id,
-                entrada: { [Op.gte]: hoje },
-            },
-        });
+        // const checkinExistente = await Ponto.findOne({
+        //     where: {
+        //         alunoId: req.user.id,
+        //         entrada: { [Op.gte]: hoje },
+        //     },
+        // });
 
-        if (checkinExistente)
-            return res.status(400).json({ msg: "Você já fez check-in hoje." });
+        // if (checkinExistente)
+        //     return res.status(400).json({ msg: "Você já fez check-in hoje." });
 
         const aluno = await User.findByPk(req.user.id);
         if (!aluno || !aluno.turma)
