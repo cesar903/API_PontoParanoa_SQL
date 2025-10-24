@@ -15,6 +15,7 @@ const User = sequelize.define("User", {
   turma: { type: DataTypes.ENUM("manha", "tarde", "karate"), allowNull: false },
   role: { type: DataTypes.ENUM("aluno", "professor"), allowNull: false },
   karate: { type: DataTypes.BOOLEAN, defaultValue: false },
+  ginastica: { type: DataTypes.BOOLEAN, defaultValue: false },
   resetPasswordToken: DataTypes.STRING,
   resetPasswordExpires: DataTypes.DATE,
 }, {

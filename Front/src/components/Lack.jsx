@@ -108,7 +108,7 @@ export default function Lack({ isOpen, onClose }) {
         const fetchAlunos = async () => {
             setLoading(true);
             try {
-                const response = await axios.get("http://localhost:5000/api/professores/alunos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
@@ -137,7 +137,7 @@ export default function Lack({ isOpen, onClose }) {
 
         try {
             const response = await axios.post(
-                `http://localhost:5000/api/professores/falta-justificada/${formData.alunoId}`,
+                `https://escolinha.paranoa.com.br/api/professores/falta-justificada/${formData.alunoId}`,
                 {
                     data: dia,
                     justificada: true, // Aqui está fixo como justificada; ajuste conforme desejar
@@ -182,7 +182,7 @@ export default function Lack({ isOpen, onClose }) {
             const ano = mesSelecionado.getFullYear();
 
             const responseRegistros = await axios.get(
-                `http://localhost:5000/api/professores/relatorio/${aluno.id}?mes=${mes}&ano=${ano}`,
+                `https://escolinha.paranoa.com.br/api/professores/relatorio/${aluno.id}?mes=${mes}&ano=${ano}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
@@ -211,7 +211,7 @@ export default function Lack({ isOpen, onClose }) {
 
         try {
             const response = await axios.delete(
-                `http://localhost:5000/api/professores/falta/${faltaId}`,
+                `https://escolinha.paranoa.com.br/api/professores/falta/${faltaId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,

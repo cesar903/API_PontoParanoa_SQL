@@ -134,7 +134,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/alunos/${aluno.id}/pontos`, {
+      const response = await axios.get(`https://escolinha.paranoa.com.br/api/alunos/${aluno.id}/pontos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPontos(response.data);
@@ -190,7 +190,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     if (!confirmar) return; // Se o usuário cancelar, não faz nada
 
     try {
-      await axios.delete(`http://localhost:5000/api/professores/ponto/${pontoId}`, {
+      await axios.delete(`https://escolinha.paranoa.com.br/api/professores/ponto/${pontoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchPontos(); 
@@ -209,7 +209,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/alunos/${aluno.id}/pontos`, {
+      const response = await axios.get(`https://escolinha.paranoa.com.br/api/alunos/${aluno.id}/pontos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

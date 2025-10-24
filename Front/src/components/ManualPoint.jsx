@@ -109,7 +109,7 @@ function ManualPoint() {
 
         try {
             await axios.post(
-                "http://localhost:5000/api/alunos/ponto/manual",
+                "https://escolinha.paranoa.com.br/api/alunos/ponto/manual",
                 { dia, chegada, saida },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

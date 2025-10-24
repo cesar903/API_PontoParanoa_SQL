@@ -34,7 +34,7 @@ exports.listarPontosPendentes = async (req, res) => {
 
 exports.cadastrarUsuario = async (req, res) => {
     // Desestruturação dos dados enviados no corpo da requisição
-    const { nome, email, senha, nasc, cpf, endereco, turma, role, karate } = req.body;
+    const { nome, email, senha, nasc, cpf, endereco, turma, role, karate, ginastica } = req.body;
 
     // Verificação para garantir que todos os campos obrigatórios foram preenchidos
     if (!nome || !email || !senha || !nasc || !role || !endereco || !cpf) {
@@ -43,7 +43,7 @@ exports.cadastrarUsuario = async (req, res) => {
 
     try {
         // Verifica se já existe um usuário com o e-mail informado
-        const usuarioExistente = await User.findOne({ where: { email } });  
+        const usuarioExistente = await User.findOne({ where: { email } });
         if (usuarioExistente) {
             return res.status(400).json({ msg: "E-mail já cadastrado" });
         }
@@ -63,7 +63,8 @@ exports.cadastrarUsuario = async (req, res) => {
             endereco,
             turma,
             role,
-            karate
+            karate,
+            ginastica
         });
 
         // Salva o novo usuário no banco de dados
@@ -143,7 +144,7 @@ exports.listarAlunos = async (req, res) => {
     try {
         const alunos = await User.findAll({
             where: { role: "aluno" },
-            attributes: ["id", "nome", "email", "role", "cpf", "nasc", "endereco", "turma"]
+            attributes: ["id", "nome", "email", "role", "cpf", "nasc", "endereco", "turma", "ginastica", "karate"]
         });
         res.json(alunos);
     } catch (error) {
@@ -372,7 +373,7 @@ exports.excluirAluno = async (req, res) => {
 
 exports.atualizarAluno = async (req, res) => {
     const { id } = req.params;
-    const { nome, email, nasc, cpf, endereco, turma, karate } = req.body;
+    const { nome, email, nasc, cpf, endereco, turma, karate, ginastica } = req.body;
 
     try {
         // Buscar o aluno pelo id
@@ -381,8 +382,6 @@ exports.atualizarAluno = async (req, res) => {
             return res.status(404).json({ msg: "Aluno não encontrado" });
         }
 
-        console.log(karate)
-
         // Atualizar os campos que foram enviados
         if (nome) aluno.nome = nome;
         if (email) aluno.email = email;
@@ -390,7 +389,9 @@ exports.atualizarAluno = async (req, res) => {
         if (cpf) aluno.cpf = cpf;
         if (endereco) aluno.endereco = endereco;
         if (turma) aluno.turma = turma;
-        if (turma) aluno.karate = karate;
+        if (karate !== undefined) aluno.karate = karate;
+        if (ginastica !== undefined) aluno.ginastica = ginastica;
+
 
         // Salvar as alterações
         await aluno.save();
@@ -431,8 +432,8 @@ exports.contarFaltas = async (req, res) => {
                     [Op.gte]: inicioMes,
                     [Op.lt]: inicioProximoMes,
                 },
-            }  
-            
+            }
+
         });
 
         // Criar um Set com as datas dos pontos aprovados (YYYY-MM-DD)

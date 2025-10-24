@@ -203,8 +203,8 @@ const Calendario = () => {
         setRole(decodedToken.role);
 
         const url = decodedToken.role === "aluno"
-          ? "http://localhost:5000/api/alunos/calendario"
-          : "http://localhost:5000/api/professores/calendario";
+          ? "https://escolinha.paranoa.com.br/api/alunos/calendario"
+          : "https://escolinha.paranoa.com.br/api/professores/calendario";
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` },
@@ -228,7 +228,7 @@ const Calendario = () => {
   useEffect(() => {
     const fetchAniversariantes = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/alunos/aniversariantes", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/aniversariantes", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
           }
@@ -284,7 +284,7 @@ const Calendario = () => {
     try {
       if (diaExistente && diaExistente.id) {
         await axios.put(
-          `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
+          `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
           { temAula },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -296,7 +296,7 @@ const Calendario = () => {
         );
       } else {
         const response = await axios.post(
-          "http://localhost:5000/api/professores/calendario",
+          "https://escolinha.paranoa.com.br/api/professores/calendario",
           { data: dateString, temAula },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -381,7 +381,7 @@ const Calendario = () => {
           }
 
           await axios.delete(
-            `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
+            `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log(`Dia letivo ${dateString} excluído com sucesso.`);
@@ -427,7 +427,7 @@ const Calendario = () => {
 
     const token = localStorage.getItem("token");
     // A URL agora usa a data formatada, como o backend espera
-    const url = `http://localhost:5000/api/professores/calendario/${formattedDate}/aviso`;
+    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${formattedDate}/aviso`;
 
     try {
       await axios.put(

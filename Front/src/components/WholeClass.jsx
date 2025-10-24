@@ -169,7 +169,7 @@ const WholeClass = ({ isOpen, onClose }) => {
             }
             setLoading(true);
             try {
-                const response = await axios.get("http://localhost:5000/api/professores/alunos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -202,7 +202,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                 return;
             }
 
-            axios.delete(`http://localhost:5000/api/professores/alunos/${confirmation.alunoId}`, {
+            axios.delete(`https://escolinha.paranoa.com.br/api/professores/alunos/${confirmation.alunoId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
                 .then(() => {
@@ -219,7 +219,6 @@ const WholeClass = ({ isOpen, onClose }) => {
     };
 
     const handleEdit = (aluno) => {
-        console.log(new Date("2002-03-08T00:00:00.000+00:00").toISOString().split('T')[0]);
         const dataFormatada = aluno.nasc
             ? new Date(aluno.nasc).toISOString().split('T')[0]
             : '';
@@ -227,6 +226,8 @@ const WholeClass = ({ isOpen, onClose }) => {
         setSelectedAluno({
             ...aluno,
             nasc: dataFormatada,
+            karate: Boolean(aluno.karate),      
+            ginastica: Boolean(aluno.ginastica) 
         });
     };
 
@@ -242,11 +243,14 @@ const WholeClass = ({ isOpen, onClose }) => {
 
         const alunoParaSalvar = {
             ...selectedAluno,
-            karate: selectedAluno.turma === "karate" ? true : selectedAluno.karate
+            karate: selectedAluno.turma === "karate" ? true : selectedAluno.karate,
+            ginastica: selectedAluno.turma === "ginastica" ? true : selectedAluno.ginastica
         };
 
+
+
         try {
-            await axios.put(`http://localhost:5000/api/professores/alunos/${selectedAluno.id}`, alunoParaSalvar, {
+            await axios.put(`https://escolinha.paranoa.com.br/api/professores/alunos/${selectedAluno.id}`, alunoParaSalvar, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -259,7 +263,7 @@ const WholeClass = ({ isOpen, onClose }) => {
             alert("Erro ao salvar as alterações.");
             console.error(error);
         } finally {
-            setLoading(false); // Desativa o carregamento
+            setLoading(false);
         }
     };
 
@@ -292,6 +296,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                     <option value="manha">Manhã</option>
                     <option value="tarde">Tarde</option>
                     <option value="karate">Karatê</option>
+                    <option value="ginastica">Ginástica</option>
                 </Select>
 
 
@@ -394,6 +399,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                                         <option value="manha">Manhã</option>
                                         <option value="tarde">Tarde</option>
                                         <option value="karate">Karatê</option>
+                                        <option value="ginastica">Ginástica</option>
                                     </Select>
                                 </Label>
 
@@ -424,6 +430,38 @@ const WholeClass = ({ isOpen, onClose }) => {
                                             </label>
                                         </div>
                                     </Label>
+                                )}
+
+                                {selectedAluno.turma !== "ginastica" && (
+                                    <Label>
+                                        Optou por Ginástica?
+                                        <div style={{ display: "flex", gap: "20px", marginTop: "5px" }}>
+                                            <label>
+                                                Sim
+                                                <input
+                                                    type="radio"
+                                                    name="ginastica"
+                                                    value="sim"
+                                                    checked={selectedAluno.ginastica === true}
+                                                    onChange={() => setSelectedAluno({ ...selectedAluno, ginastica: true })}
+                                                />
+                                            </label>
+                                            <label>
+                                                Não
+                                                <input
+                                                    type="radio"
+                                                    name="ginastica"
+                                                    value="nao"
+                                                    checked={selectedAluno.ginastica === false}
+                                                    onChange={() => setSelectedAluno({ ...selectedAluno, ginastica: false })}
+                                                />
+                                            </label>
+                                        </div>
+                                    </Label>
+                                )}
+
+                                {selectedAluno.turma === "ginastica" && (
+                                    <p>Aluno matriculado na Ginastica ✅</p>
                                 )}
 
                                 {selectedAluno.turma === "karate" && (

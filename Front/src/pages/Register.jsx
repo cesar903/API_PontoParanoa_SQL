@@ -141,6 +141,7 @@ function Register() {
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [karate, setKarate] = useState(false);
+  const [ginastica, setGinastica] = useState(false);
 
 
   // Função para formatar o CPF
@@ -168,11 +169,13 @@ function Register() {
     e.preventDefault();
     setLoading(true);
     const enviarKarate = turma === "karate" ? true : karate;
+    const ginasticaKarate = turma === "ginastica" ? true : ginastica;
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/professores/usuarios",
-        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, karate: enviarKarate},
+        "https://escolinha.paranoa.com.br/api/professores/usuarios",
+        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, karate: enviarKarate, ginastica: ginasticaKarate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -268,14 +271,15 @@ function Register() {
               <option value="manha">Manhã</option>
               <option value="tarde">Tarde</option>
               <option value="karate">Karatê</option>
+              <option value="ginastica">Ginástica</option>
             </Select>
           )}
 
           {((turma === "manha" || turma === "tarde") && role !== "professor") && (
             <>
-            Optou pelo Karatê?
+              Optou pelo Karatê?
               <RadioWrapper>
-                
+
                 <RadioLabel>
                   Sim
                   <input type="radio" name="karate" value="sim" onChange={() => setKarate(true)} />
@@ -289,6 +293,61 @@ function Register() {
                 </RadioLabel>
               </RadioWrapper>
 
+              Optou pelo Ginástica??
+              <RadioWrapper>
+
+                <RadioLabel>
+                  Sim
+                  <input type="radio" name="ginastica" value="sim" onChange={() => setGinastica(true)} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Não
+                  <input type="radio" name="ginastica" value="nao" onChange={() => setGinastica(false)} defaultChecked />
+                  <span></span>
+                </RadioLabel>
+              </RadioWrapper>
+            </>
+          )}
+
+          {(turma == "ginastica") && (
+            <>
+              Optou pelo Karatê?
+              <RadioWrapper>
+
+                <RadioLabel>
+                  Sim
+                  <input type="radio" name="karate" value="sim" onChange={() => setKarate(true)} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Não
+                  <input type="radio" name="karate" value="nao" onChange={() => setKarate(false)} defaultChecked />
+                  <span></span>
+                </RadioLabel>
+              </RadioWrapper>
+            </>
+          )}
+
+          {(turma == "karate") && (
+            <>
+              Optou pelo Ginástica?
+              <RadioWrapper>
+
+                <RadioLabel>
+                  Sim
+                  <input type="radio" name="karate" value="sim" onChange={() => setGinastica(true)} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Não
+                  <input type="radio" name="karate" value="nao" onChange={() => setGinastica(false)} defaultChecked />
+                  <span></span>
+                </RadioLabel>
+              </RadioWrapper>
             </>
           )}
 
