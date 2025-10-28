@@ -3,7 +3,6 @@ const { sequelize, connectDB } = require("./src/config/db");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
-
 require("./src/models/associations");
 
 
@@ -18,6 +17,7 @@ app.use("/api/professores", require("./src/routes/professorRoutes"));
 app.use("/api/me", require("./src/routes/userRoutes"));
 app.use("/api/mensagens", require("./src/routes/mensagemRoutes"));
 app.use("/api/contatos", require("./src/routes/contatoRoutes"));
+app.use("/api/acronis", require("./src/routes/acronisRoutes"));
 
 
 
