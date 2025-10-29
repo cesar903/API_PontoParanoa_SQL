@@ -6,6 +6,7 @@ import Datawake from "../assets/logoDatawake.png"
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import SignatureCanvas from "react-signature-canvas";
 import PDFRegister from "../components/PDFRegisterGinastica"
+import { ToastContainer, toast } from 'react-toastify';
 
 
 const Container = styled.div`
@@ -243,12 +244,12 @@ export default function GinasticaRegister() {
         });
 
 
-        doc.save(`Ginastica_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+        //doc.save(`Ginastica_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
 
         const pdfBlob = doc.output("blob");
 
         const formData = new FormData();
-        formData.append("formularioPDF", pdfBlob, `Ginastica_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+        formData.append("formularioPDF", pdfBlob, `Ginastica_${form.nome || ""}_${form.dataDeclaracao || "Aluno"}.pdf`);
 
         Object.entries(form).forEach(([key, value]) => {
             if (typeof value === "object" && value !== null) {
@@ -258,21 +259,38 @@ export default function GinasticaRegister() {
             }
         });
 
+        const toastId = toast.loading("Enviando PDF, aguarde...");
         try {
             const res = await axios.post(
                 "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
-            console.log("PDF enviado com sucesso:", res.data);
+
+            toast.update(toastId, {
+                render: "Formulario enviado com sucesso!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+                closeOnClick: true,
+            });
+
+
         } catch (err) {
-            console.error("Erro ao enviar PDF:", err);
+            toast.update(toastId, {
+                render: "Erro ao enviar PDF ❌",
+                type: "error",
+                isLoading: false,
+                autoClose: 4000,
+                closeOnClick: true,
+            });
         }
     };
 
 
     return (
         <Container>
+            <ToastContainer position="top-right" theme="colored" />
             <div className="container d-flex justify-content-center text-center justify-content-start  pt-5 mb-5">
                 <div className="row mt-5">
                     <div className="col-md-5">
