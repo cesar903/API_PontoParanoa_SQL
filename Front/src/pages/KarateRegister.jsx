@@ -143,7 +143,7 @@ export default function KarateRegister() {
             email: ""
         },
 
-        dataDeclaracao: ""
+        dataDeclaracao: new Date().toISOString().split("T")[0]
     });
 
     const [mostrar, setMostrar] = useState({
@@ -317,7 +317,7 @@ export default function KarateRegister() {
 
         const assinaturaAlunoData = sigCanvasAluno.current?.toDataURL("image/png");
 
-    
+
         let perfil;
         if (form.foto) {
             perfil = await new Promise((resolve) => {
@@ -347,7 +347,7 @@ export default function KarateRegister() {
 
         try {
             const res = await axios.post(
-                "https://escolinha.paranoa.com.br/api/acronis/formulario",
+                "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -1200,26 +1200,24 @@ export default function KarateRegister() {
                     {etapa === 5 && (
                         <>
                             <div className="form-group mt-4">
-                                <p>
-                                    Declaro a veracidade das informações anteriormente declarada. <br />
-                                    Estou ciente que este é um benefício da empresa e que posso utilizar durante todo o período vigente do contrato de trabalho acordado. <br /><br />
-                                    Diadema,{" "}
-                                    <input
-                                        type="date"
-                                        className="form-control d-inline-block w-auto ml-2"
-                                        name="dataDeclaracao"
-                                        value={form.dataDeclaracao}
-                                        onChange={handleChange}
-                                        style={{
-                                            border: erros["dataDeclaracao"] ? "2px solid red" : "1px solid #ccc",
-                                            borderRadius: "4px",
-                                        }}
-                                    />
-                                    {erros["dataDeclaracao"] && (
-                                        <AiOutlineExclamationCircle style={{ color: "red", marginLeft: "5px" }} />
-                                    )}
+                                <div className="form-group mt-4">
+                                    <p>
+                                        Declaro a veracidade das informações anteriormente declaradas. <br />
+                                        Estou ciente de que este é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
+                                        Diadema,{" "}
+                                        {new Date().toLocaleDateString("pt-BR", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                        })}
+                                        {erros["dataDeclaracao"] && (
+                                            <AiOutlineExclamationCircle
+                                                style={{ color: "red", marginLeft: "5px" }}
+                                            />
+                                        )}
+                                    </p>
 
-                                </p>
+                                </div>
                             </div>
 
                             <div className="row mt-4 d-flex justify-content-center">

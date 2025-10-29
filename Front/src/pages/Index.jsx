@@ -138,7 +138,7 @@ function Index() {
         const buscarNaoLidas = async () => {
             try {
                 const res = await axios.get(
-                    "https://escolinha.paranoa.com.br/api/mensagens/nao-lidas",
+                    "http://localhost:5000/api/mensagens/nao-lidas",
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 // res.data.contador é um objeto com {usuarioId: qtd}
@@ -159,7 +159,7 @@ function Index() {
         if (!isModalOpen) {
             try {
                 const token = localStorage.getItem("token");
-                const response = await axios.get("https://escolinha.paranoa.com.br/api/me", {
+                const response = await axios.get("http://localhost:5000/api/me", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserData(response.data);
