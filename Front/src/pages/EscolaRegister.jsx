@@ -5,6 +5,7 @@ import Paranoa from "../assets/logo-paranoa.png"
 import Datawake from "../assets/logoDatawake.png"
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import SignatureCanvas from "react-signature-canvas";
+import PDFRegister from "../components/PDFRegisterEscola"
 
 
 const Container = styled.div`
@@ -205,11 +206,11 @@ export default function EscolaRegister() {
 
     const validarEtapa = () => {
         const camposObrigatorios = {
-           1: ["nome", "nascimento", "email", "rg", "cpf", "foto", "telefone", "parentesco", "funcionarioIndicando", "telefoneFuncionario", "emissor", "dataEmissor", "sexo", "destroCanhoto", "jaTrabalhou", "temFilhos", "alergiaMedicamento", "alergiaAlimento", "setor", "beneficio", "escolaridade",  "escola"],
+            1: ["nome", "nascimento", "email", "rg", "cpf", "foto", "telefone", "parentesco", "funcionarioIndicando", "telefoneFuncionario", "emissor", "dataEmissor", "sexo", "destroCanhoto", "jaTrabalhou", "temFilhos", "alergiaMedicamento", "alergiaAlimento", "setor", "beneficio", "escolaridade", "escola"],
             2: ["transtorno", "tratamentoSaude", "medicamento", "convenio", "passarMal"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT", "endereco.cartaoOnibus", "endereco.moradia"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone", "pai.nascimento", "mae.nascimento", "pai.falecido", "mae.falecida"],
-            5: ["dataDeclaracao"]
+            5: ["dataDeclaracao", "assinaturaAluno"]
         };
 
         if (mostrar.modalidade) {
@@ -219,19 +220,17 @@ export default function EscolaRegister() {
         const novosErros = {};
 
         camposObrigatorios[etapa]?.forEach((campo) => {
-            const valor = getValue(form, campo);
-
-
-            if (!valor || valor.toString().trim() === "" || valor == null) {
-                novosErros[campo] = true;
+            if (campo === "assinaturaAluno") {
+                if (!sigCanvasAluno.current || sigCanvasAluno.current.isEmpty()) {
+                    novosErros[campo] = true;
+                }
+            } else {
+                const valor = getValue(form, campo);
+                if (!valor || valor.toString().trim() === "") {
+                    novosErros[campo] = true;
+                }
             }
         });
-
-        if (etapa === 5) {
-            if (!sigCanvasAluno.current || sigCanvasAluno.current.isEmpty()) novosErros["assinaturaAluno"] = true;
-            // if (!sigCanvasGerente.current || sigCanvasGerente.current.isEmpty()) novosErros["assinaturaGerente"] = true;
-            // if (!sigCanvasProf.current || sigCanvasProf.current.isEmpty()) novosErros["assinaturaProf"] = true;
-        }
 
         setErros(novosErros);
 
@@ -245,7 +244,7 @@ export default function EscolaRegister() {
 
     const etapaCompleta = (etapa) => {
         const camposObrigatorios = {
-            1: ["nome", "nascimento", "email", "rg", "cpf", "foto", "telefone", "parentesco", "funcionarioIndicando", "telefoneFuncionario", "emissor", "dataEmissor", "sexo", "destroCanhoto", "jaTrabalhou", "temFilhos", "alergiaMedicamento", "alergiaAlimento", "setor", "beneficio", "escolaridade",  "escola"],
+            1: ["nome", "nascimento", "email", "rg", "cpf", "foto", "telefone", "parentesco", "funcionarioIndicando", "telefoneFuncionario", "emissor", "dataEmissor", "sexo", "destroCanhoto", "jaTrabalhou", "temFilhos", "alergiaMedicamento", "alergiaAlimento", "setor", "beneficio", "escolaridade", "escola"],
             2: ["transtorno", "tratamentoSaude", "medicamento", "convenio", "passarMal"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT", "endereco.cartaoOnibus", "endereco.moradia"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone", "pai.nascimento", "mae.nascimento", "pai.falecido", "mae.falecida"],
@@ -389,50 +388,45 @@ export default function EscolaRegister() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validarEtapa()) return;
 
-        const formDataToSend = new FormData();
+        const assinaturaAlunoData = sigCanvasAluno.current?.toDataURL("image/png");
 
-        // Campos de texto/objetos
+        let perfil;
+        if (form.foto) {
+            perfil = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(form.foto);
+            });
+        }
+        const doc = PDFRegister(form, {"Aluno(a)/Responsável": assinaturaAlunoData}, perfil);
+
+
+        doc.save(`EscolaDigital_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+
+        const pdfBlob = doc.output("blob");
+
+        const formData = new FormData();
+        formData.append("formularioPDF", pdfBlob, `EscolaDigital_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+
         Object.entries(form).forEach(([key, value]) => {
             if (typeof value === "object" && value !== null) {
-                formDataToSend.append(key, JSON.stringify(value));
+                formData.append(key, JSON.stringify(value));
             } else {
-                formDataToSend.append(key, value);
+                formData.append(key, value);
             }
         });
-
-        // Foto do aluno
-        if (form.foto) {
-            formDataToSend.append("foto", form.foto);
-        }
-
-        // Assinaturas em base64
-        if (sigCanvasAluno.current) {
-            const alunoData = sigCanvasAluno.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaAluno", alunoData);
-        }
-        if (sigCanvasGerente.current) {
-            const gerenteData = sigCanvasGerente.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaGerente", gerenteData);
-        }
-        if (sigCanvasProf.current) {
-            const profData = sigCanvasProf.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaProf", profData);
-        }
 
         try {
             const res = await axios.post(
                 "https://escolinha.paranoa.com.br/api/acronis/formulario",
-                formDataToSend,
-                {
-                    headers: { "Content-Type": "multipart/form-data" }
-                }
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
             );
-            console.log(res.data);
+            console.log("PDF enviado com sucesso:", res.data);
         } catch (err) {
-            console.error(err);
+            console.error("Erro ao enviar PDF:", err);
         }
     };
 
@@ -442,7 +436,6 @@ export default function EscolaRegister() {
 
     const handleFotoChange = (e) => {
         const file = e.target.files[0];
-
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
@@ -450,14 +443,12 @@ export default function EscolaRegister() {
             return;
         }
 
-
-        setForm((prev) => ({ ...prev, foto: file }));
-
+        setForm(prev => ({ ...prev, foto: file }));
 
         const previewURL = URL.createObjectURL(file);
         setPreviewFoto(previewURL);
 
-        setErros((prev) => {
+        setErros(prev => {
             const { foto, ...rest } = prev;
             return rest;
         });
@@ -944,13 +935,26 @@ export default function EscolaRegister() {
 
                             <div className="form-row mb-4">
 
-                                <div className="form-group col-md-4" >
-                                    <label>Tamanho da Camiseta</label>
-                                    <input type="text" className="form-control" name="funcionarioIndicando" value={form.funcionarioIndicando} onChange={handleChange} style={{ borderColor: erros["funcionarioIndicando"] ? "red" : undefined }} />
-                                    {erros["funcionarioIndicando"] && (
-                                        <AiOutlineExclamationCircle className="alertError" style={{ marginTop: "-15px" }} />
-                                    )}
+                                <div className="form-group col-md-3">
+                                    <label>Tamanho da Camisa</label>
+                                    <select
+                                        className="form-control"
+                                        name="camisa"
+                                        value={form.camisa}
+                                        onChange={handleChange}
+                                        style={{ borderColor: erros["camisa"] ? "red" : undefined }}
+                                    >
+                                        <option value="">Selecione</option>
+                                        <option value="PP">PP</option>
+                                        <option value="P">P</option>
+                                        <option value="M">M</option>
+                                        <option value="G">G</option>
+                                        <option value="GG">GG</option>
+                                        <option value="XG">XG</option>
+                                    </select>
+                                    {erros["camisa"] && <AiOutlineExclamationCircle className="alertError" />}
                                 </div>
+
 
                                 <div
                                     className="form-group col-md-4 text-center"
@@ -1034,7 +1038,7 @@ export default function EscolaRegister() {
                                         id="fotoInput"
                                         accept="image/*"
                                         onChange={handleFotoChange}
-                                        style={{ display: "none", }}
+                                        style={{ display: "none" }}
                                         name="foto"
                                     />
 
@@ -2149,8 +2153,7 @@ export default function EscolaRegister() {
                                 </p>
                             </div>
 
-                            <div className="row mt-4">
-
+                            <div className="row mt-4 d-flex justify-content-center">
                                 <div className="col-12 col-md-6 mb-4" style={{ position: "relative" }}>
                                     <div className="text-center">
                                         <SignatureCanvas
@@ -2169,48 +2172,10 @@ export default function EscolaRegister() {
                                     </div>
                                 </div>
 
-
-
-                                <div className="col-12 col-md-6 mb-4">
-                                    <div className="text-center">
-                                        <SignatureCanvas
-                                            ref={sigCanvasGerente}
-                                            penColor="black"
-                                            canvasProps={{ className: "border w-100", height: 150 }}
-                                        />
-                                        <small className="d-block mt-2">Assinatura Gerente (Thais Muller Xavier)</small>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-warning mt-2"
-                                            onClick={() => sigCanvasGerente.current.clear()}
-                                        >
-                                            Limpar
-                                        </button>
-                                    </div>
-                                </div>
-
-
-                                <div className="col-12 col-md-6 mb-4">
-                                    <div className="text-center">
-                                        <SignatureCanvas
-                                            ref={sigCanvasProf}
-                                            penColor="black"
-                                            canvasProps={{ className: "border w-100", height: 150 }}
-                                        />
-                                        <small className="d-block mt-2">Profissional Educacional (Quezia Arruda)</small>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-warning mt-2"
-                                            onClick={() => sigCanvasProf.current.clear()}
-                                        >
-                                            Limpar
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="text-center mt-4">
-                                <button type="submit" className="btn btn-primary px-5">Enviar Inscrição</button>
+                                <button type="submit" className="btn btn-success px-5">Enviar Inscrição</button>
                             </div>
                         </>
                     )}

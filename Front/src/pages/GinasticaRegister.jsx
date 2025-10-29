@@ -5,7 +5,7 @@ import Paranoa from "../assets/logo-paranoa.png"
 import Datawake from "../assets/logoDatawake.png"
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import SignatureCanvas from "react-signature-canvas";
-import PDFRegister from "../components/PDFRegister"
+import PDFRegister from "../components/PDFRegisterGinastica"
 
 
 const Container = styled.div`
@@ -73,18 +73,6 @@ const NavButton = styled.button`
   }
 `;
 
-const Perfil = styled.img`
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 8px;
-`
-const AddImage = styled.button`
-    background-color: #fbb514;
-    color: black;
-`
-
-
 
 export default function GinasticaRegister() {
     const [form, setForm] = useState({
@@ -137,24 +125,23 @@ export default function GinasticaRegister() {
         const camposObrigatorios = {
             1: ["nome", "nascimento", "email", "rg", "cpf", "telefone", "setor", "re", "camisa"],
             2: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade"],
-            3: ["dataDeclaracao"]
+            3: ["dataDeclaracao", "assinaturaAluno"] 
         };
 
         const novosErros = {};
 
         camposObrigatorios[etapa]?.forEach((campo) => {
-            const valor = getValue(form, campo);
-
-            if (!valor || valor.toString().trim() === "" || valor == null) {
-                novosErros[campo] = true;
+            if (campo === "assinaturaAluno") {
+                if (!sigCanvasAluno.current || sigCanvasAluno.current.isEmpty()) {
+                    novosErros[campo] = true;
+                }
+            } else {
+                const valor = getValue(form, campo);
+                if (!valor || valor.toString().trim() === "") {
+                    novosErros[campo] = true;
+                }
             }
         });
-
-        if (etapa === 5) {
-            if (!sigCanvasAluno.current || sigCanvasAluno.current.isEmpty()) novosErros["assinaturaAluno"] = true;
-            // if (!sigCanvasGerente.current || sigCanvasGerente.current.isEmpty()) novosErros["assinaturaGerente"] = true;
-            // if (!sigCanvasProf.current || sigCanvasProf.current.isEmpty()) novosErros["assinaturaProf"] = true;
-        }
 
         setErros(novosErros);
 
@@ -166,11 +153,12 @@ export default function GinasticaRegister() {
         return true;
     };
 
+
     const etapaCompleta = (etapa) => {
         const camposObrigatorios = {
             1: ["nome", "nascimento", "email", "rg", "cpf", "telefone", "setor", "re", "camisa"],
             2: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade"],
-            3: ["dataDeclaracao"]
+            3: ["dataDeclaracao", "assinaturaAluno"]
         };
 
         const faltando = camposObrigatorios[etapa]?.filter(
@@ -248,49 +236,41 @@ export default function GinasticaRegister() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validarEtapa()) return;
 
-        const formDataToSend = new FormData();
+        const assinaturaAlunoData = sigCanvasAluno.current?.toDataURL("image/png");
 
-
-        Object.entries(form).forEach(([key, value]) => {
-            if (typeof value === "object" && value !== null) {
-                formDataToSend.append(key, JSON.stringify(value));
-            } else {
-                formDataToSend.append(key, value);
-            }
+        const doc = PDFRegister(form, {
+            "Aluno(a)/Responsável": assinaturaAlunoData,
         });
 
 
-        // Assinaturas em base64
-        if (sigCanvasAluno.current) {
-            const alunoData = sigCanvasAluno.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaAluno", alunoData);
-        }
-        if (sigCanvasGerente.current) {
-            const gerenteData = sigCanvasGerente.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaGerente", gerenteData);
-        }
-        if (sigCanvasProf.current) {
-            const profData = sigCanvasProf.current.toDataURL("image/png");
-            formDataToSend.append("assinaturaProf", profData);
-        }
+        doc.save(`Ginastica_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+
+        const pdfBlob = doc.output("blob");
+
+        const formData = new FormData();
+        formData.append("formularioPDF", pdfBlob, `Ginastica_${form.dataDeclaracao || ""}_${form.nome || "Aluno"}.pdf`);
+
+        Object.entries(form).forEach(([key, value]) => {
+            if (typeof value === "object" && value !== null) {
+                formData.append(key, JSON.stringify(value));
+            } else {
+                formData.append(key, value);
+            }
+        });
 
         try {
             const res = await axios.post(
                 "https://escolinha.paranoa.com.br/api/acronis/formulario",
-                formDataToSend,
-                {
-                    headers: { "Content-Type": "multipart/form-data" }
-                }
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
             );
-            console.log(res.data);
+            console.log("PDF enviado com sucesso:", res.data);
         } catch (err) {
-            console.error(err);
+            console.error("Erro ao enviar PDF:", err);
         }
     };
-
 
 
     return (
@@ -330,15 +310,6 @@ export default function GinasticaRegister() {
                                 disabled={etapa < 2}
                             >
                                 Endereço
-                            </NavButton>
-
-                            <NavButton
-                                active={etapa === 3}
-                                style={{ backgroundColor: etapaCompleta(3) ? "#84fa84" : undefined }}
-                                onClick={() => setEtapa(3)}
-                                disabled={etapa < 3}
-                            >
-                                Familiares
                             </NavButton>
                         </ButtonBar>
 
@@ -413,11 +384,24 @@ export default function GinasticaRegister() {
                                 </div>
                                 <div className="form-group col-md-3">
                                     <label>Tamanho da Camisa</label>
-                                    <input type="text" className="form-control" name="camisa" value={form.camisa} onChange={handleChange} style={{ borderColor: erros["camisa"] ? "red" : undefined }} />
-                                    {erros["camisa"] && (
-                                        <AiOutlineExclamationCircle className="alertError" />
-                                    )}
+                                    <select
+                                        className="form-control"
+                                        name="camisa"
+                                        value={form.camisa}
+                                        onChange={handleChange}
+                                        style={{ borderColor: erros["camisa"] ? "red" : undefined }}
+                                    >
+                                        <option value="">Selecione</option>
+                                        <option value="PP">PP</option>
+                                        <option value="P">P</option>
+                                        <option value="M">M</option>
+                                        <option value="G">G</option>
+                                        <option value="GG">GG</option>
+                                        <option value="XG">XG</option>
+                                    </select>
+                                    {erros["camisa"] && <AiOutlineExclamationCircle className="alertError" />}
                                 </div>
+
                             </div>
 
 
@@ -542,9 +526,9 @@ export default function GinasticaRegister() {
                                 </p>
                             </div>
 
-                            <div className="row mt-4">
+                            <div className="row mt-4 d-flex justify-content-center">
 
-                                <div className="col-12 col-md-6 mb-4" style={{ position: "relative" }}>
+                                <div className="col-12 col-md-6 mb-4">
                                     <div className="text-center">
                                         <SignatureCanvas
                                             ref={sigCanvasAluno}
@@ -561,50 +545,13 @@ export default function GinasticaRegister() {
                                         <button type="button" className="btn btn-sm btn-warning mt-2" onClick={() => sigCanvasAluno.current.clear()}>Limpar</button>
                                     </div>
                                 </div>
-
-
-
-                                <div className="col-12 col-md-6 mb-4">
-                                    <div className="text-center">
-                                        <SignatureCanvas
-                                            ref={sigCanvasGerente}
-                                            penColor="black"
-                                            canvasProps={{ className: "border w-100", height: 150 }}
-                                        />
-                                        <small className="d-block mt-2">Assinatura Gerente (Thais Muller Xavier)</small>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-warning mt-2"
-                                            onClick={() => sigCanvasGerente.current.clear()}
-                                        >
-                                            Limpar
-                                        </button>
-                                    </div>
-                                </div>
-
-
-                                <div className="col-12 col-md-6 mb-4">
-                                    <div className="text-center">
-                                        <SignatureCanvas
-                                            ref={sigCanvasProf}
-                                            penColor="black"
-                                            canvasProps={{ className: "border w-100", height: 150 }}
-                                        />
-                                        <small className="d-block mt-2">Profissional Educacional (Quezia Arruda)</small>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-warning mt-2"
-                                            onClick={() => sigCanvasProf.current.clear()}
-                                        >
-                                            Limpar
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="text-center mt-4">
-                                <button type="submit" className="btn btn-primary px-5">Enviar Inscrição</button>
+                                <button type="submit" className="btn btn-success px-5">Enviar Inscrição</button>
                             </div>
+
+
                         </>
                     )}
 

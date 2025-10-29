@@ -1,22 +1,16 @@
-const fs = require("fs");
-const path = require("path");
-
 const receberFormulario = (req, res) => {
     try {
-        const formData = req.body;
-        const arquivoFoto = req.file;
+        const formData = req.body; 
+        const arquivoPDF = req.file; 
 
         console.log("=== Formulário Recebido ===");
-        console.log(formData);
+        console.log("Campos do formulário:", formData);
 
-        if (arquivoFoto) {
-            console.log("Arquivo foto recebido:", arquivoFoto.originalname);
+        if (arquivoPDF) {
+            console.log("PDF recebido:", arquivoPDF.originalname);
+        } else {
+            console.log("Nenhum PDF recebido!");
         }
-
-        // Assinaturas em base64
-        if (formData.assinaturaAluno) console.log("Assinatura Aluno recebida");
-        if (formData.assinaturaGerente) console.log("Assinatura Gerente recebida");
-        if (formData.assinaturaProf) console.log("Assinatura Profissional recebida");
 
         return res.status(200).json({ success: true, message: "Formulário recebido!" });
     } catch (error) {

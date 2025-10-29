@@ -3,8 +3,10 @@ const router = express.Router();
 const multer = require("multer");
 const { receberFormulario } = require("../controllers/acronisController");
 
-const upload = multer(); 
+const upload = multer(); // memoryStorage padrão
 
-router.post("/formulario", upload.single("foto"), receberFormulario);
+// Recebe PDF e assinaturas
+router.post("/formulario", upload.single("formularioPDF"), receberFormulario);
+
 
 module.exports = router;
