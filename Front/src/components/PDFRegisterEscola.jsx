@@ -66,7 +66,7 @@ export default function PDFRegister(form, assinaturas = {}, perfil) {
     // --- PÁGINA 1 ---
 
     // --- Logo e Título Principal ---
-    doc.addImage(Logo, "PNG", 10, 8, 70, 20);
+    doc.addImage(Logo, "PNG", 10, 8, 90, 20);
     doc.setFontSize(14);
     doc.setTextColor("#00aded");
     doc.setFont("helvetica", "bold");

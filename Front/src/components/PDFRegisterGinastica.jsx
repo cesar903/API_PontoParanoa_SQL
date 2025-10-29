@@ -20,7 +20,7 @@ export default function PDFRegister(form, assinaturas = {}) {
 
 
 
-    doc.addImage(Logo, "PNG", 10, 8, 75, 20);
+    doc.addImage(Logo, "PNG", 10, 8, 90, 20);
 
 
     doc.setFontSize(14);

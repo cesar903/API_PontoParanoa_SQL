@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Paranoa from "../assets/logo-paranoa.png"
 import Datawake from "../assets/logoDatawake.png"
@@ -51,8 +52,8 @@ const ButtonBar = styled.div`
 const NavButton = styled.button`
   flex: 1;
   padding: 5px 5px;
-  background-color: ${(props) => (props.active ? "#fff" : "transparent")};
-  color: ${(props) => (props.active ? "#000" : "#aaa")};
+  background-color: ${({ $active }) => ($active ? "#fff" : "transparent")};
+  color: ${({ $active }) => ($active ? "#000" : "#aaa")};
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -61,7 +62,7 @@ const NavButton = styled.button`
 
   &:hover {
     color: #fff;
-    background-color: ${(props) => (props.active ? "#fff" : "#333")};
+    background-color: ${({ $active }) => ($active ? "#fff" : "#333")};
   }
 
   &:focus {
@@ -70,9 +71,10 @@ const NavButton = styled.button`
 
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.5; 
+    opacity: 0.5;
   }
 `;
+
 
 const Perfil = styled.img`
     width: 150px;
@@ -158,8 +160,7 @@ export default function KarateRegister() {
     const [previewFoto, setPreviewFoto] = useState(null);
     const [erros, setErros] = useState({});
     const sigCanvasAluno = useRef(null);
-    const sigCanvasGerente = useRef(null);
-    const sigCanvasProf = useRef(null);
+    const navigate = useNavigate();
 
 
     const proximaEtapa = () => {
@@ -341,7 +342,7 @@ export default function KarateRegister() {
         const toastId = toast.loading("Enviando PDF, aguarde...");
         try {
             const res = await axios.post(
-                "http://localhost:5000/api/acronis/formulario",
+                "https://escolinha.paranoa.com.br/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -353,6 +354,10 @@ export default function KarateRegister() {
                 autoClose: 3000,
                 closeOnClick: true,
             });
+
+            setTimeout(() => {
+                navigate("/successregister");
+            }, 3000);
 
 
         } catch (err) {
@@ -417,7 +422,7 @@ export default function KarateRegister() {
                     <div className="form-row mt-5 mb-5 d-flex justify-content-center sticky-top">
                         <ButtonBar className="mt-4 mb-4 mt-md-1 mb-md-1">
                             <NavButton
-                                active={etapa === 1}
+                                $active={etapa === 1}
                                 style={{ backgroundColor: etapaCompleta(1) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(1)}
                                 disabled={etapa < 1}
@@ -426,7 +431,7 @@ export default function KarateRegister() {
                             </NavButton>
 
                             <NavButton
-                                active={etapa === 2}
+                                $active={etapa === 2}
                                 style={{ backgroundColor: etapaCompleta(2) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(2)}
                                 disabled={etapa < 2}
@@ -435,7 +440,7 @@ export default function KarateRegister() {
                             </NavButton>
 
                             <NavButton
-                                active={etapa === 3}
+                                $active={etapa === 3}
                                 style={{ backgroundColor: etapaCompleta(3) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(3)}
                                 disabled={etapa < 3}
@@ -444,7 +449,7 @@ export default function KarateRegister() {
                             </NavButton>
 
                             <NavButton
-                                active={etapa === 4}
+                                $active={etapa === 4}
                                 style={{ backgroundColor: etapaCompleta(4) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(4)}
                                 disabled={etapa < 4}

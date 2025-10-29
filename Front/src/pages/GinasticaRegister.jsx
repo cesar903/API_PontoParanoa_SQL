@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import axios from "axios";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import Paranoa from "../assets/logo-paranoa.png"
 import Datawake from "../assets/logoDatawake.png"
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import SignatureCanvas from "react-signature-canvas";
 import PDFRegister from "../components/PDFRegisterGinastica"
 import { ToastContainer, toast } from 'react-toastify';
+
 
 
 const Container = styled.div`
@@ -51,8 +53,8 @@ const ButtonBar = styled.div`
 const NavButton = styled.button`
   flex: 1;
   padding: 5px 5px;
-  background-color: ${(props) => (props.active ? "#fff" : "transparent")};
-  color: ${(props) => (props.active ? "#000" : "#aaa")};
+  background-color: ${({ $active }) => ($active ? "#fff" : "transparent")};
+  color: ${({ $active }) => ($active ? "#000" : "#aaa")};
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -61,7 +63,7 @@ const NavButton = styled.button`
 
   &:hover {
     color: #fff;
-    background-color: ${(props) => (props.active ? "#fff" : "#333")};
+    background-color: ${({ $active }) => ($active ? "#fff" : "#333")};
   }
 
   &:focus {
@@ -70,10 +72,9 @@ const NavButton = styled.button`
 
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.5; 
+    opacity: 0.5;
   }
 `;
-
 
 export default function GinasticaRegister() {
     const [form, setForm] = useState({
@@ -108,6 +109,7 @@ export default function GinasticaRegister() {
     const [etapa, setEtapa] = useState(1);
     const [erros, setErros] = useState({});
     const sigCanvasAluno = useRef(null);
+    const navigate = useNavigate();
 
 
     const proximaEtapa = () => {
@@ -260,9 +262,10 @@ export default function GinasticaRegister() {
         });
 
         const toastId = toast.loading("Enviando PDF, aguarde...");
+
         try {
             const res = await axios.post(
-                "http://localhost:5000/api/acronis/formulario",
+                "https://escolinha.paranoa.com.br/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -274,6 +277,10 @@ export default function GinasticaRegister() {
                 autoClose: 3000,
                 closeOnClick: true,
             });
+
+            setTimeout(() => {
+                navigate("/successregister");
+            }, 3000);
 
 
         } catch (err) {
@@ -311,7 +318,7 @@ export default function GinasticaRegister() {
                     <div className="form-row mt-5 mb-5 d-flex justify-content-center sticky-top">
                         <ButtonBar className="mt-4 mb-4 mt-md-1 mb-md-1">
                             <NavButton
-                                active={etapa === 1}
+                                $active={etapa === 1}
                                 style={{ backgroundColor: etapaCompleta(1) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(1)}
                                 disabled={etapa < 1}
@@ -320,8 +327,8 @@ export default function GinasticaRegister() {
                             </NavButton>
 
                             <NavButton
-                                active={etapa === 2}
-                                style={{ backgroundColor: etapaCompleta(2) ? "#84fa84" : undefined }}
+                                $active={etapa === 2}
+                                style={{ backgroundColor: etapaCompleta(1) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(2)}
                                 disabled={etapa < 2}
                             >

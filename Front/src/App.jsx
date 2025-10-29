@@ -12,6 +12,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import KarateRegister from "./pages/KarateRegister";
 import GinasticaRegister from "./pages/GinasticaRegister";
 import EscolaRegister from "./pages/EscolaRegister";
+import SuccessRegister from "./pages/SuccessRegister";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/cadastrokarate" element={<KarateRegister />} />
         <Route path="/cadastroescola" element={<EscolaRegister />} />
         <Route path="/cadastroginastica" element={< GinasticaRegister/>} />
+        <Route path="/successregister" element={< SuccessRegister/>} />
         <Route path="/" element={<Logar />} />
         <Route path="/recover" element={<RecoverPassword />} />
         <Route path="/resetar-senha/:token" element={<UpdatePassword />} />

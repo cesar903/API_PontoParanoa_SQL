@@ -6,7 +6,7 @@ const receberFormulario = async (req, res) => {
         const arquivoPDF = req.file;
         if (!arquivoPDF) return res.status(400).json({ success: false, message: "Nenhum PDF recebido!" });
 
-        console.log("PDF recebido:", arquivoPDF.originalname);
+    
 
         // === Gerar token Acronis ===
         const tokenResponse = await axios.post(
@@ -52,7 +52,6 @@ const receberFormulario = async (req, res) => {
         const fileName = arquivoPDF.originalname;
         const fileSize = fileBuffer.length;
 
-        console.log("Chegou aqui (Pronto para Upload Binário)");
 
         // === Upload DIRETO dos bytes do arquivo (Buffer) ===
         const uploadUrl = `${process.env.ACRONIS_DATACENTER_URL}/fc/api/v1/sync_and_share_nodes/${folderUUID}/upload?filename=${encodeURIComponent(fileName)}&size=${fileSize}`;
