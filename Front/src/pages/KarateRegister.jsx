@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -162,6 +162,22 @@ export default function KarateRegister() {
     const sigCanvasAluno = useRef(null);
     const navigate = useNavigate();
 
+    //Evita o envio do form com o enter no navegador e no servidor
+    useEffect(() => {
+        const formElement = document.querySelector("#formulario");
+        if (!formElement) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+                e.preventDefault();
+            }
+        };
+
+        formElement.addEventListener("keydown", handleKeyDown);
+        return () => formElement.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+
 
     const proximaEtapa = () => {
         if (validarEtapa()) setEtapa((prev) => prev + 1);
@@ -318,10 +334,17 @@ export default function KarateRegister() {
         if (!validarEtapa()) return;
 
         const assinaturaAlunoData = sigCanvasAluno.current?.toDataURL("image/png");
+        let perfilBase64 = null;
+        if (form.foto) {
+            perfilBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(form.foto);
+            });
+        }
 
-        const doc = PDFRegister(form, {
-            "Aluno(a)/Responsável": assinaturaAlunoData,
-        });
+        const doc = PDFRegister(form, { "Aluno(a)/Responsável": assinaturaAlunoData }, perfilBase64);
 
 
         //doc.save(`Karate_${form.nome || ""}_${form.dataDeclaracao || "Aluno"}.pdf`);
@@ -418,7 +441,7 @@ export default function KarateRegister() {
             <div className="container py-4">
 
                 <h1 className="text-center mb-4">FICHA DE INSCRIÇÃO - KARATÊ</h1>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} id="formulario">
                     <div className="form-row mt-5 mb-5 d-flex justify-content-center sticky-top">
                         <ButtonBar className="mt-4 mb-4 mt-md-1 mb-md-1">
                             <NavButton

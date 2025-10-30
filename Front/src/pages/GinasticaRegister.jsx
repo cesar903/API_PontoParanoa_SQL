@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
@@ -110,6 +110,21 @@ export default function GinasticaRegister() {
     const [erros, setErros] = useState({});
     const sigCanvasAluno = useRef(null);
     const navigate = useNavigate();
+
+    //Evita o envio do form com o enter no navegador e no servidor
+    useEffect(() => {
+        const formElement = document.querySelector("#formulario");
+        if (!formElement) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+                e.preventDefault();
+            }
+        };
+
+        formElement.addEventListener("keydown", handleKeyDown);
+        return () => formElement.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
 
     const proximaEtapa = () => {
@@ -314,7 +329,7 @@ export default function GinasticaRegister() {
             <div className="container py-4">
 
                 <h1 className="text-center mb-4">FICHA DE INSCRIÇÃO - GINÁSTICA</h1>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} id="formulario">
                     <div className="form-row mt-5 mb-5 d-flex justify-content-center sticky-top">
                         <ButtonBar className="mt-4 mb-4 mt-md-1 mb-md-1">
                             <NavButton

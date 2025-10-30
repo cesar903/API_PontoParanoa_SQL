@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef,useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -195,6 +195,23 @@ export default function EscolaRegister() {
     const navigate = useNavigate();
 
 
+    //Evita o envio do form com o enter no navegador e no servidor
+    useEffect(() => {
+        const formElement = document.querySelector("#formulario");
+        if (!formElement) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+                e.preventDefault();
+            }
+        };
+
+        formElement.addEventListener("keydown", handleKeyDown);
+        return () => formElement.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+
+
 
     const proximaEtapa = () => {
         if (validarEtapa()) setEtapa((prev) => prev + 1);
@@ -300,7 +317,7 @@ export default function EscolaRegister() {
         if (name === "endereco.moradia") {
             setMostrar((prev) => ({
                 ...prev,
-                moradiaCedida: value === "cedida", // ativa input "Por quem?" apenas se cedida
+                moradiaCedida: value === "cedida",
             }));
         }
 
@@ -394,9 +411,18 @@ export default function EscolaRegister() {
 
         const assinaturaAlunoData = sigCanvasAluno.current?.toDataURL("image/png");
 
-        const doc = PDFRegister(form, {
-            "Aluno(a)/Responsável": assinaturaAlunoData,
-        });
+        let perfilBase64 = null;
+        if (form.foto) {
+            perfilBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(form.foto);
+            });
+        }
+
+        const doc = PDFRegister(form, { "Aluno(a)/Responsável": assinaturaAlunoData }, perfilBase64);
+
 
 
         //doc.save(`EscolaDigital_${form.nome || ""}_${form.dataDeclaracao || "Aluno"}.pdf`);
@@ -487,14 +513,14 @@ export default function EscolaRegister() {
             <div className="container py-4">
 
                 <h1 className="text-center mb-4">FICHA DE INSCRIÇÃO - ESCOLA DIGITAL</h1>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} id="formulario">
                     <div className="form-row mt-5 mb-5 d-flex justify-content-center sticky-top">
                         <ButtonBar className="mt-4 mb-4 mt-md-1 mb-md-1">
                             <NavButton
                                 $active={etapa === 1}
                                 style={{ backgroundColor: etapaCompleta(1) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(1)}
-                                disabled={etapa < 1}
+                                //disabled={etapa < 1}
                             >
                                 Candidato
                             </NavButton>
@@ -503,7 +529,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 2}
                                 style={{ backgroundColor: etapaCompleta(2) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(2)}
-                                disabled={etapa < 2}
+                                //disabled={etapa < 2}
                             >
                                 Saúde
                             </NavButton>
@@ -512,7 +538,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 3}
                                 style={{ backgroundColor: etapaCompleta(3) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(3)}
-                                disabled={etapa < 3}
+                                //disabled={etapa < 3}
                             >
                                 Endereço
                             </NavButton>
@@ -521,7 +547,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 4}
                                 style={{ backgroundColor: etapaCompleta(4) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(4)}
-                                disabled={etapa < 4}
+                                //disabled={etapa < 4}
                             >
                                 Familiares
                             </NavButton>
@@ -946,7 +972,7 @@ export default function EscolaRegister() {
                             </div>
 
 
-                            <div className="form-row mb-4">
+                            <div className="form-row mb-4" style={{ borderColor: erros["camisa"] ? "red" : undefined }}>
 
                                 <div className="form-group col-md-3">
                                     <label>Tamanho da Camisa</label>
@@ -955,7 +981,6 @@ export default function EscolaRegister() {
                                         name="camisa"
                                         value={form.camisa}
                                         onChange={handleChange}
-                                        style={{ borderColor: erros["camisa"] ? "red" : undefined }}
                                     >
                                         <option value="">Selecione</option>
                                         <option value="PP">PP</option>
