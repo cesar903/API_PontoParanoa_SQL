@@ -113,4 +113,9 @@ MySQL (local ou SERVER)
 Acesso à API do Acronis (para o módulo de inscrições)
 
 
+**👨‍💻 Autor**
+
+Desenvolvido por: Cesar Reis
+📧 E-mail: cesarreis521@gmail.com / cmeneses@paranoa.com.br
+
 
