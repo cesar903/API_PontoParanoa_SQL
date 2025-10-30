@@ -52,17 +52,31 @@ O objetivo é facilitar o gerenciamento acadêmico e otimizar a comunicação en
 ### 📁 1️⃣ Clonar o repositório  
 ```bash
 git clone https://github.com/cesar903/API_PontoParanoa_SQL.git
+```
 
 ---
- **Intalação FRONT-END**
-- cd frontend
-- npm install
 
-**Instalação Backend**
-- cd backend
-- npm install
+### 💻 2️⃣ Instalar as dependências  
 
-**ENV no Backend**
+#### 🔸 Frontend  
+```bash
+cd frontend
+npm install
+```
+
+#### 🔹 Backend  
+```bash
+cd backend
+npm install
+```
+
+---
+
+### ⚙️ 3️⃣ Configurar o arquivo `.env`  
+
+Crie um arquivo **.env** na pasta `/backend` com as seguintes variáveis de ambiente:  
+
+```
 DB_NAME=
 DB_USER=
 DB_PASS=
@@ -72,6 +86,7 @@ JWT_SECRET=
 EMAIL_USER=
 EMAIL_PASS=
 
+
 # API do Acronis
 ACRONIS_CLIENT_ID=
 ACRONIS_CLIENT_SECRET=
@@ -79,21 +94,36 @@ ACRONIS_USERNAME=
 ACRONIS_PASSWORD=
 ACRONIS_DATACENTER_URL=
 
+```
 
-**Executar o projeto - BACK**
-- cd backend
-- npm run dev
+> 💡 **Dica:** nunca compartilhe seu arquivo `.env` em repositórios públicos.  
 
-**Executar o projeto - FRONT**
-- cd backend
-- npm start
+---
 
+### ▶️ 4️⃣ Executar o projeto  
 
-**📁 Estrutura do Projeto**
+#### 🔹 Rodar o Backend  
+```bash
+cd backend
+npm run dev
+```
+
+#### 🔸 Rodar o Frontend  
+```bash
+cd frontend
+npm start
+```
+
+---
+
+## 📁 Estrutura do Projeto  
+
+```
 /frontend
  ├── src/
  │   ├── components/
  │   ├── pages/
+ │   ├── services/
  │   ├── assets/
  │   ├── App.jsx
  │   └── index.js
@@ -103,19 +133,48 @@ ACRONIS_DATACENTER_URL=
  ├── routes/
  ├── models/
  ├── middlewares/
+ ├── utils/
  └── server.js
+```
+
+---
 
 
-**🧠 Requisitos**
-Node.js (>= 18.x)
-NPM ou Yarn
-MySQL (local ou SERVER)
-Acesso à API do Acronis (para o módulo de inscrições)
 
+## 🧰 Scripts Disponíveis  
 
-**👨‍💻 Autor**
+### **Frontend**
+| Comando | Descrição |
+|----------|------------|
+| `npm start` | Inicia o servidor de desenvolvimento |
+| `npm run build` | Gera a build para produção |
 
-Desenvolvido por: Cesar Reis
-📧 E-mail: cesarreis521@gmail.com / cmeneses@paranoa.com.br
+### **Backend**
+| Comando | Descrição |
+|----------|------------|
+| `npm run dev` | Inicia o servidor com nodemon |
+| `npm start` | Executa o servidor em produção |
 
+---
 
+## 🧠 Requisitos  
+
+- Node.js (>= 18.x)  
+- NPM ou Yarn  
+- MMySQL
+- Acesso à API do Acronis (para o módulo de inscrições)  
+
+---
+
+## 👨‍💻 Autor  
+
+**Desenvolvido por:** [Cesar Reis](https://github.com/cesar903)  
+📧 **E-mail:** cesarreis521@gmail.com / cmeneses@paranoa.com.br
+
+---
+
+## 🧾 Licença  
+
+Este projeto está licenciado sob a [MIT License](LICENSE).  
+
+---
