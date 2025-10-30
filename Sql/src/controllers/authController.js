@@ -37,7 +37,7 @@ const login = async (req, res) => {
 
 // Configurando o transporte para envio de e-mail
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp.datawake.com.br",
   port: 587,
   secure: false,
   auth: {
@@ -64,7 +64,7 @@ const solicitarRecuperacaoSenha = async (req, res) => {
       resetPasswordExpires: expira,
     });
 
-    const resetUrl = `https://escolinha.paranoa.com.br/resetar-senha/${token}`;
+    const resetUrl = `http://escolinha.paranoa.com.br/resetar-senha/${token}`;
 
     const mailOptions = {
       to: user.email,
