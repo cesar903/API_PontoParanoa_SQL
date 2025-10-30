@@ -51,7 +51,7 @@ O objetivo é facilitar o gerenciamento acadêmico e otimizar a comunicação en
 
 ### 📁 1️⃣ Clonar o repositório  
 ```bash
-git clone https://github.com/cesar903/API_PontoParanoa_SQL.git
+git clone https://github.com/Datawake-tec/PontoCadastro_EscolaDigital.git
 ```
 
 ---
