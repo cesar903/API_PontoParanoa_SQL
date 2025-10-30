@@ -105,13 +105,13 @@ ACRONIS_DATACENTER_URL=
 #### 🔹 Rodar o Backend  
 ```bash
 cd backend
-npm run dev
+npm start
 ```
 
 #### 🔸 Rodar o Frontend  
 ```bash
 cd frontend
-npm start
+npm run dev
 ```
 
 ---
