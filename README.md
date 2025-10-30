@@ -12,7 +12,7 @@
 
 ## 🧾 Sobre o Projeto  
 
-O **Sistema de Ponto e Gestão de Alunos** é uma plataforma completa desenvolvida para a **Escola Digital, Karatê e Ginastica**.  
+O **Sistema de Ponto e Gestão de Alunos** é uma plataforma completa desenvolvida para a **Escola Digital, Karatê e Ginastica** pertencente a Paranoá industria de Borracha.  
 O sistema permite o controle de presença, gerenciamento de turmas, envio de mensagens e **inscrição automatizada de novos alunos**, totalmente integrada com o **Acronis**.  
 
 O objetivo é facilitar o gerenciamento acadêmico e otimizar a comunicação entre alunos, professores e administração.
