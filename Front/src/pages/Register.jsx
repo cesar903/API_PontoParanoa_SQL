@@ -142,6 +142,8 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [karate, setKarate] = useState(false);
   const [ginastica, setGinastica] = useState(false);
+  const [professorTipo, setProfessorTipo] = useState(null);
+
 
 
   // Função para formatar o CPF
@@ -174,8 +176,8 @@ function Register() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "https://escolinha.paranoa.com.br/api/professores/usuarios",
-        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, karate: enviarKarate, ginastica: ginasticaKarate },
+        "http://localhost:5000/api/professores/usuarios",
+        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, professorTipo, karate: enviarKarate, ginastica: ginasticaKarate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -190,6 +192,7 @@ function Register() {
       setEndereco("");
       setTurma("manha");
       setRole("aluno");
+      setProfessorTipo("");
     } catch (error) {
       setMessage(error.response?.data?.msg || "Erro ao cadastrar usuário");
       setIsError(true);
@@ -350,6 +353,33 @@ function Register() {
               </RadioWrapper>
             </>
           )}
+
+          {((role == "professor") && (
+            <>
+              Professor do(a):
+              <RadioWrapper>
+
+                <RadioLabel>
+                  Escola Digital
+                  <input type="radio" name="professorTipo" value="tecnologia" onChange={() => setProfessorTipo("tecnologia")} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Karatê
+                  <input type="radio" name="professorTipo" value="karate" onChange={() => setProfessorTipo("karate")} />
+                  <span></span>
+                </RadioLabel>
+
+                <RadioLabel>
+                  Ginastica
+                  <input type="radio" name="professorTipo" value="ginastica" onChange={() => setProfessorTipo("ginastica")} />
+                  <span></span>
+                </RadioLabel>
+
+              </RadioWrapper>
+            </>
+          ))}
 
 
           <Button type="submit">Cadastrar</Button>

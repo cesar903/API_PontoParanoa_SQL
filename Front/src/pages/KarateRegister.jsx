@@ -145,7 +145,7 @@ export default function KarateRegister() {
             profissao: "",
             email: ""
         },
-
+        termo: "",
         dataDeclaracao: new Date().toISOString().split("T")[0]
     });
 
@@ -195,7 +195,7 @@ export default function KarateRegister() {
             2: ["transtorno", "tratamentoSaude", "medicamento"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone"],
-            5: ["dataDeclaracao", "assinaturaAluno"]
+            5: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         if (mostrar.modalidade) {
@@ -233,7 +233,7 @@ export default function KarateRegister() {
             2: ["transtorno", "tratamentoSaude", "medicamento"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone"],
-            5: ["dataDeclaracao", "assinaturaAluno"]
+            5: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         const faltando = camposObrigatorios[etapa]?.filter(
@@ -365,7 +365,7 @@ export default function KarateRegister() {
         const toastId = toast.loading("Enviando PDF, aguarde...");
         try {
             const res = await axios.post(
-                "https://escolinha.paranoa.com.br/api/acronis/formulario",
+                "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -475,7 +475,7 @@ export default function KarateRegister() {
                                 $active={etapa === 4}
                                 style={{ backgroundColor: etapaCompleta(4) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(4)}
-                                disabled={etapa < 4}
+                            //disabled={etapa < 4}
                             >
                                 Familiares
                             </NavButton>
@@ -1239,24 +1239,43 @@ export default function KarateRegister() {
                     {etapa === 5 && (
                         <>
                             <div className="form-group mt-4">
-                                <div className="form-group mt-4">
-                                    <p>
-                                        Declaro a veracidade das informações anteriormente declaradas. <br />
-                                        Estou ciente de que este é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
-                                        Diadema,{" "}
-                                        {new Date().toLocaleDateString("pt-BR", {
-                                            day: "numeric",
-                                            month: "long",
-                                            year: "numeric",
-                                        })}
-                                        {erros["dataDeclaracao"] && (
+                                <a href="" style={{ color: "#FDB913" }}>Termos e polícas da empresa.</a>
+                                <label>
+                                    <p style={{ color: erros["termo"] ? "red" : "inherit" }}>
+                                        <input
+                                            type="checkbox"
+                                            name="termo"
+                                            checked={form.termo === "sim"}
+                                            onChange={(e) =>
+                                                setForm({ ...form, termo: e.target.checked ? "sim" : "" })
+                                            }
+                                        />{" "}
+                                        Li e estou de acordo com os termos e políticas presentes neste documento.
+                                        {erros["termo"] && (
                                             <AiOutlineExclamationCircle
                                                 style={{ color: "red", marginLeft: "5px" }}
                                             />
                                         )}
                                     </p>
+                                </label>
 
-                                </div>
+                                <br /><br />
+                                <p>
+                                    Declaro a veracidade das informações anteriormente declaradas. <br />
+                                    Estou ciente de que o vale-transporte é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
+                                    Diadema,{" "}
+                                    {new Date().toLocaleDateString("pt-BR", {
+                                        day: "numeric",
+                                        month: "long",
+                                        year: "numeric",
+                                    })}
+                                    {erros["dataDeclaracao"] && (
+                                        <AiOutlineExclamationCircle
+                                            style={{ color: "red", marginLeft: "5px" }}
+                                        />
+                                    )}
+                                </p>
+
                             </div>
 
                             <div className="row mt-4 d-flex justify-content-center">

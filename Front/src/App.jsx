@@ -13,11 +13,13 @@ import KarateRegister from "./pages/KarateRegister";
 import GinasticaRegister from "./pages/GinasticaRegister";
 import EscolaRegister from "./pages/EscolaRegister";
 import SuccessRegister from "./pages/SuccessRegister";
+import FormCadastro from "./pages/FormCadastro";
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/cadastro" element={<FormCadastro />} />
         <Route path="/cadastrokarate" element={<KarateRegister />} />
         <Route path="/cadastroescola" element={<EscolaRegister />} />
         <Route path="/cadastroginastica" element={< GinasticaRegister/>} />

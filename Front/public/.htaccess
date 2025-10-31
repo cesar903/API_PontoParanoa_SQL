@@ -1,8 +1,21 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home2/escolinhaparanoa/pointapi2"
+PassengerBaseURI "/api"
+PassengerNodejs "/home2/escolinhaparanoa/nodevenv/pointapi2/18/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
 <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+    RewriteEngine On
+    # Ignora rotas do backend
+    RewriteCond %{REQUEST_URI} ^/api
+    RewriteRule ^ - [L]
+    # Ignora arquivos e pastas existentes
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    # Redireciona todas as outras rotas para index.html do React
+    RewriteRule ^ index.html [L]
 </IfModule>
+# ... (Resto do arquivo, incluindo handlers PHP e variáveis de ambiente)

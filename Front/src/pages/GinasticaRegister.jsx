@@ -100,8 +100,7 @@ export default function GinasticaRegister() {
             complemento: "",
         },
 
-
-
+        termo: "",
         dataDeclaracao: new Date().toISOString().split("T")[0]
     });
 
@@ -141,7 +140,7 @@ export default function GinasticaRegister() {
         const camposObrigatorios = {
             1: ["nome", "nascimento", "email", "rg", "cpf", "telefone", "setor", "re", "camisa"],
             2: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade"],
-            3: ["dataDeclaracao", "assinaturaAluno"]
+            3: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         const novosErros = {};
@@ -174,7 +173,7 @@ export default function GinasticaRegister() {
         const camposObrigatorios = {
             1: ["nome", "nascimento", "email", "rg", "cpf", "telefone", "setor", "re", "camisa"],
             2: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade"],
-            3: ["dataDeclaracao", "assinaturaAluno"]
+            3: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         const faltando = camposObrigatorios[etapa]?.filter(
@@ -280,7 +279,7 @@ export default function GinasticaRegister() {
 
         try {
             const res = await axios.post(
-                "https://escolinha.paranoa.com.br/api/acronis/formulario",
+                "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -542,9 +541,31 @@ export default function GinasticaRegister() {
                     {etapa === 3 && (
                         <>
                             <div className="form-group mt-4">
+                                <a href="" style={{ color: "#FDB913" }}>Termos e polícas da empresa.</a>
+                                <label>
+                                    <p style={{ color: erros["termo"] ? "red" : "inherit" }}>
+                                        <input
+                                            type="checkbox"
+                                            name="termo"
+                                            checked={form.termo === "sim"}
+                                            onChange={(e) =>
+                                                setForm({ ...form, termo: e.target.checked ? "sim" : "" })
+                                            }
+                                        />{" "}
+                                        Li e estou de acordo com os termos e políticas presentes neste documento.
+                                        {erros["termo"] && (
+                                            <AiOutlineExclamationCircle
+                                                style={{ color: "red", marginLeft: "5px" }}
+                                            />
+                                        )}
+                                    </p>
+                                </label>
+
+                                <br /><br />
+
                                 <p>
                                     Declaro a veracidade das informações anteriormente declaradas. <br />
-                                    Estou ciente de que este é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
+                                    Estou ciente de que o vale-transporte é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
                                     Diadema,{" "}
                                     {new Date().toLocaleDateString("pt-BR", {
                                         day: "numeric",

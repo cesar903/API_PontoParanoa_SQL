@@ -6,7 +6,7 @@ const User = sequelize.define("User", {
   email: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true 
+    unique: true
   },
   senha: { type: DataTypes.STRING, allowNull: false },
   cpf: { type: DataTypes.STRING, allowNull: false },
@@ -14,6 +14,10 @@ const User = sequelize.define("User", {
   endereco: { type: DataTypes.STRING, allowNull: false },
   turma: { type: DataTypes.ENUM("manha", "tarde", "karate"), allowNull: false },
   role: { type: DataTypes.ENUM("aluno", "professor"), allowNull: false },
+  professorTipo: {
+    type: DataTypes.ENUM("tecnologia", "karate", "ginastica"),
+    allowNull: true, 
+  },
   karate: { type: DataTypes.BOOLEAN, defaultValue: false },
   ginastica: { type: DataTypes.BOOLEAN, defaultValue: false },
   resetPasswordToken: DataTypes.STRING,

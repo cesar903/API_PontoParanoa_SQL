@@ -1,4 +1,4 @@
-import { useState, useRef,useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -172,7 +172,7 @@ export default function EscolaRegister() {
         },
 
 
-
+        termo: "",
         dataDeclaracao: new Date().toISOString().split("T")[0]
     });
 
@@ -229,7 +229,7 @@ export default function EscolaRegister() {
             2: ["transtorno", "tratamentoSaude", "medicamento", "convenio", "passarMal"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT", "endereco.cartaoOnibus", "endereco.moradia"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone", "pai.nascimento", "mae.nascimento", "pai.falecido", "mae.falecida"],
-            5: ["dataDeclaracao", "assinaturaAluno"]
+            5: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         if (mostrar.modalidade) {
@@ -267,7 +267,7 @@ export default function EscolaRegister() {
             2: ["transtorno", "tratamentoSaude", "medicamento", "convenio", "passarMal"],
             3: ["endereco.cep", "endereco.rua", "endereco.numero", "endereco.bairro", "endereco.cidade", "endereco.linhasOnibus", "endereco.valorVT", "endereco.cartaoOnibus", "endereco.moradia"],
             4: ["mae.nome", "mae.rg", "mae.cpf", "mae.telefone", "pai.nome", "pai.rg", "pai.cpf", "pai.telefone", "pai.nascimento", "mae.nascimento", "pai.falecido", "mae.falecida"],
-            5: ["dataDeclaracao"]
+            5: ["dataDeclaracao", "assinaturaAluno", "termo"]
         };
 
         const faltando = camposObrigatorios[etapa]?.filter(
@@ -443,7 +443,7 @@ export default function EscolaRegister() {
         const toastId = toast.loading("Enviando PDF, aguarde...");
         try {
             const res = await axios.post(
-                "https://escolinha.paranoa.com.br/api/acronis/formulario",
+                "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -520,7 +520,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 1}
                                 style={{ backgroundColor: etapaCompleta(1) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(1)}
-                                //disabled={etapa < 1}
+                            //disabled={etapa < 1}
                             >
                                 Candidato
                             </NavButton>
@@ -529,7 +529,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 2}
                                 style={{ backgroundColor: etapaCompleta(2) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(2)}
-                                //disabled={etapa < 2}
+                            //disabled={etapa < 2}
                             >
                                 Saúde
                             </NavButton>
@@ -538,7 +538,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 3}
                                 style={{ backgroundColor: etapaCompleta(3) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(3)}
-                                //disabled={etapa < 3}
+                            //disabled={etapa < 3}
                             >
                                 Endereço
                             </NavButton>
@@ -547,7 +547,7 @@ export default function EscolaRegister() {
                                 $active={etapa === 4}
                                 style={{ backgroundColor: etapaCompleta(4) ? "#84fa84" : undefined }}
                                 onClick={() => setEtapa(4)}
-                                //disabled={etapa < 4}
+                            //disabled={etapa < 4}
                             >
                                 Familiares
                             </NavButton>
@@ -2169,24 +2169,43 @@ export default function EscolaRegister() {
                     {etapa === 5 && (
                         <>
                             <div className="form-group mt-4">
-                                <div className="form-group mt-4">
-                                    <p>
-                                        Declaro a veracidade das informações anteriormente declaradas. <br />
-                                        Estou ciente de que este é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
-                                        Diadema,{" "}
-                                        {new Date().toLocaleDateString("pt-BR", {
-                                            day: "numeric",
-                                            month: "long",
-                                            year: "numeric",
-                                        })}
-                                        {erros["dataDeclaracao"] && (
+                                <a href="" style={{ color: "#FDB913" }}>Termos e polícas da empresa.</a>
+                                <label>
+                                    <p style={{ color: erros["termo"] ? "red" : "inherit" }}>
+                                        <input
+                                            type="checkbox"
+                                            name="termo"
+                                            checked={form.termo === "sim"}
+                                            onChange={(e) =>
+                                                setForm({ ...form, termo: e.target.checked ? "sim" : "" })
+                                            }
+                                        />{" "}
+                                        Li e estou de acordo com os termos e políticas presentes neste documento.
+                                        {erros["termo"] && (
                                             <AiOutlineExclamationCircle
                                                 style={{ color: "red", marginLeft: "5px" }}
                                             />
                                         )}
                                     </p>
+                                </label>
 
-                                </div>
+                                <br /><br />
+                                <p>
+                                    Declaro a veracidade das informações anteriormente declaradas. <br />
+                                    Estou ciente de que o vale-transporte é um benefício da empresa e que posso utilizá-lo durante todo o período vigente do contrato de trabalho acordado. <br /><br />
+                                    Diadema,{" "}
+                                    {new Date().toLocaleDateString("pt-BR", {
+                                        day: "numeric",
+                                        month: "long",
+                                        year: "numeric",
+                                    })}
+                                    {erros["dataDeclaracao"] && (
+                                        <AiOutlineExclamationCircle
+                                            style={{ color: "red", marginLeft: "5px" }}
+                                        />
+                                    )}
+                                </p>
+
                             </div>
 
                             <div className="row mt-4 d-flex justify-content-center">

@@ -16,7 +16,9 @@ const login = async (req, res) => {
     if (!senhaValida) return res.status(400).json({ msg: "Credenciais inválidas!" });
 
     const token = jwt.sign(
-      { id: user.id, role: user.role, nome: user.nome },
+      {
+        id: user.id, role: user.role, nome: user.nome, professorTipo: user. professorTipo, karate: user.karate, ginastica: user.ginastica
+      },
       process.env.JWT_SECRET,
       { expiresIn: "12h" }
     );
@@ -27,6 +29,9 @@ const login = async (req, res) => {
         nome: user.nome,
         email: user.email,
         role: user.role,
+        professorTipo: user.professorTipo,
+        karate: user.karate,
+        ginastica: user.ginastica
       },
     });
   } catch (error) {

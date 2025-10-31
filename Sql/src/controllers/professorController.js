@@ -34,7 +34,7 @@ exports.listarPontosPendentes = async (req, res) => {
 
 exports.cadastrarUsuario = async (req, res) => {
     // Desestruturação dos dados enviados no corpo da requisição
-    const { nome, email, senha, nasc, cpf, endereco, turma, role, karate, ginastica } = req.body;
+    const { nome, email, senha, nasc, cpf, endereco, turma, role, professorTipo, karate, ginastica } = req.body;
 
     // Verificação para garantir que todos os campos obrigatórios foram preenchidos
     if (!nome || !email || !senha || !nasc || !role || !endereco || !cpf) {
@@ -63,6 +63,7 @@ exports.cadastrarUsuario = async (req, res) => {
             endereco,
             turma,
             role,
+            professorTipo,
             karate,
             ginastica
         });
@@ -552,7 +553,7 @@ exports.enviarRelatorio = async (req, res) => {
 
 // Transporter permanece igual
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "smtp.datawake.com.br",
     port: 587,
     secure: false,
     auth: {

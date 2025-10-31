@@ -5,6 +5,7 @@ import { FaCheck, FaExclamationTriangle, FaClock } from "react-icons/fa";
 import ManualPointTeacher from "./ManualPointTeacher";
 import PointEdit from "./PointEdit";
 import Loading from "./Loading";
+import { jwtDecode } from "jwt-decode";
 import Graph from "./Graph";
 
 const Table = styled.table`
@@ -87,6 +88,7 @@ function StudantList() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [pontoSelecionado, setPontoSelecionado] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [professorTipo, setProfessorTipo] = useState(null);
 
 
     useEffect(() => {
@@ -95,7 +97,7 @@ function StudantList() {
             try {
                 const token = localStorage.getItem("token");
                 const response = await axios.get(
-                    "https://escolinha.paranoa.com.br/api/professores/pontos/pendentes",
+                    "http://localhost:5000/api/professores/pontos/pendentes",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -129,7 +131,7 @@ function StudantList() {
         try {
             const token = localStorage.getItem("token");
             await axios.patch(
-                `https://escolinha.paranoa.com.br/api/professores/ponto/${id}`,
+                `http://localhost:5000/api/professores/ponto/${id}`,
                 { status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -182,7 +184,7 @@ function StudantList() {
                 setLoading(true);
                 try {
                     await axios.put(
-                        `https://escolinha.paranoa.com.br/api/professores/ponto/finalizar-ponto/${id}`,
+                        `http://localhost:5000/api/professores/ponto/finalizar-ponto/${id}`,
                         { latitude, longitude }, // Envia a localização do professor
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
@@ -207,15 +209,58 @@ function StudantList() {
         );
     };
 
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (!token) return;
+
+        try {
+            const decoded = jwtDecode(token);
+            if (decoded && decoded.professorTipo) {
+                setProfessorTipo(decoded.professorTipo);
+                console.log("Professor tipo:", decoded.professorTipo);
+            } else {
+                console.warn("Campo 'professorTipo' não encontrado no token");
+            }
+        } catch (error) {
+            console.error("Erro ao decodificar token:", error);
+        }
+    }, []);
+
+
+    const alunosFiltrados = alunosPendentes.filter((ponto) => {
+        const aluno = ponto.aluno;
+        if (!aluno) return false;
+
+        switch (professorTipo) {
+            case "tecnologia":
+                return aluno.turma === "manha" || aluno.turma === "tarde";
+
+            case "karate":
+                return aluno.turma === "karate" || aluno.karate === true;
+
+            case "ginastica":
+                return aluno.ginastica === true;
+
+            default:
+                return true; // caso não tenha tipo definido, mostra todos
+        }
+    });
+
+
 
 
     return (
         <div className="container">
+
             <Loading show={loading} />
             {alunosPendentes.length === 0 ? (
-                <Titulo>Nenhum aluno com aprovação pendente. <FaCheck /></Titulo>
+                <Titulo>Nenhum aluno com aprovação pendente.  <div>
+                </div><FaCheck /></Titulo>
+
             ) : (
                 <Table>
+
                     <thead>
                         <tr>
                             <th>Status</th>
@@ -266,7 +311,7 @@ function StudantList() {
             )}
 
             {/* <Graph /> */}
-            
+
             <ManualPointTeacher closeModal={closeModal} />
 
             {isEditModalOpen && (
