@@ -109,7 +109,7 @@ function UpdatePassword() {
         }
 
         try {
-            const response = await axios.post(`http://localhost:5000/api/auth/resetar-senha/${token}`, { novaSenha });
+            const response = await axios.post(`https://escolinha.paranoa.com.br/api/auth/resetar-senha/${token}`, { novaSenha });
             setSuccess(response.data.msg);
             await delay(3000);
             navigate("/");

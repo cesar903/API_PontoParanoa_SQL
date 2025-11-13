@@ -3,7 +3,7 @@ const { sequelize, connectDB } = require("./src/config/db");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
-require("./src/models/associations");
+require("./src/modules/associations/models/associations");
 
 
 // Middlewares
@@ -11,13 +11,14 @@ app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 // Rotas
-app.use("/api/auth", require("./src/routes/authRoutes"));
-app.use("/api/alunos", require("./src/routes/alunoRoutes"));
-app.use("/api/professores", require("./src/routes/professorRoutes"));
-app.use("/api/me", require("./src/routes/userRoutes"));
-app.use("/api/mensagens", require("./src/routes/mensagemRoutes"));
-app.use("/api/contatos", require("./src/routes/contatoRoutes"));
-app.use("/api/acronis", require("./src/routes/acronisRoutes"));
+app.use("/api/auth", require("./src/modules/user/auth/routes/authRoutes"));
+app.use("/api/alunos", require("./src/modules/user/student/routes/alunoRoutes"));
+app.use("/api/professores", require("./src/modules/user/teacher/routes/professorRoutes"));
+app.use("/api/me", require("./src/modules/user/routes/userRoutes"));
+app.use("/api/mensagens", require("./src/modules/messages/routes/mensagemRoutes"));
+app.use("/api/contatos", require("./src/modules/messages/routes/contatoRoutes"));
+app.use("/api/acronis", require("./src/modules/acronis/routes/acronisRoutes"));
+app.use("/api/usuario", require("./src/modules/classes/routes/turmasRoutes"));
 
 
 

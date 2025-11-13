@@ -131,35 +131,35 @@ function Index() {
     const [showMessagesModal, setShowMessagesModal] = useState(false);
     const [naoLidasTotal, setNaoLidasTotal] = useState(0);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+    // useEffect(() => {
+    //     const token = localStorage.getItem("token");
+    //     if (!token) return;
 
-        const buscarNaoLidas = async () => {
-            try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/mensagens/nao-lidas",
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                // res.data.contador é um objeto com {usuarioId: qtd}
-                const total = Object.values(res.data.contador || {}).reduce((acc, v) => acc + v, 0);
-                setNaoLidasTotal(total);
-            } catch (err) {
-                console.error(err);
-            }
-        };
+    //     const buscarNaoLidas = async () => {
+    //         try {
+    //             const res = await axios.get(
+    //                 "https://escolinha.paranoa.com.br/api/mensagens/nao-lidas",
+    //                 { headers: { Authorization: `Bearer ${token}` } }
+    //             );
+    //             // res.data.contador é um objeto com {usuarioId: qtd}
+    //             const total = Object.values(res.data.contador || {}).reduce((acc, v) => acc + v, 0);
+    //             setNaoLidasTotal(total);
+    //         } catch (err) {
+    //             console.error(err);
+    //         }
+    //     };
 
-        buscarNaoLidas();
-        const interval = setInterval(buscarNaoLidas, 3000);
-        return () => clearInterval(interval);
-    }, []);
+    //     buscarNaoLidas();
+    //     const interval = setInterval(buscarNaoLidas, 3000);
+    //     return () => clearInterval(interval);
+    // }, []);
 
 
     const toggleModal = async () => {
         if (!isModalOpen) {
             try {
                 const token = localStorage.getItem("token");
-                const response = await axios.get("http://localhost:5000/api/me", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/me", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserData(response.data);

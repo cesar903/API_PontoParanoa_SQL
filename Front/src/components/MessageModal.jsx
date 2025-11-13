@@ -166,7 +166,7 @@ export default function MessageModal({ onClose }) {
     useEffect(() => {
         async function carregarUsuarios() {
             try {
-                const res = await axios.get("http://localhost:5000/api/contatos", {
+                const res = await axios.get("https://escolinha.paranoa.com.br/api/contatos", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUsuarios(res.data);
@@ -186,7 +186,7 @@ export default function MessageModal({ onClose }) {
         const interval = setInterval(async () => {
             try {
                 const res = await axios.get(
-                    `http://localhost:5000/api/mensagens/${destinatarioId}`,
+                    `https://escolinha.paranoa.com.br/api/mensagens/${destinatarioId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setMensagens(res.data);
@@ -203,7 +203,7 @@ export default function MessageModal({ onClose }) {
         if (!destinatarioId || !conteudo.trim()) return;
         try {
             const res = await axios.post(
-                "http://localhost:5000/api/mensagens",
+                "https://escolinha.paranoa.com.br/api/mensagens",
                 { destinatarioId, conteudo },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -225,7 +225,7 @@ export default function MessageModal({ onClose }) {
         const buscarNaoLidas = async () => {
             try {
                 const res = await axios.get(
-                    "http://localhost:5000/api/mensagens/nao-lidas",
+                    "https://escolinha.paranoa.com.br/api/mensagens/nao-lidas",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -252,7 +252,7 @@ export default function MessageModal({ onClose }) {
 
         try {
             const res = await axios.put(
-                `http://localhost:5000/api/mensagens/marcar-como-lidas/${id}`,
+                `https://escolinha.paranoa.com.br/api/mensagens/marcar-como-lidas/${id}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -265,7 +265,7 @@ export default function MessageModal({ onClose }) {
 
             // Espera as mensagens serem carregadas antes de rolar
             const msgsRes = await axios.get(
-                `http://localhost:5000/api/mensagens/${id}`,
+                `https://escolinha.paranoa.com.br/api/mensagens/${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setMensagens(msgsRes.data);
@@ -287,7 +287,7 @@ export default function MessageModal({ onClose }) {
         const marcarLidas = async () => {
             try {
                 await axios.put(
-                    `http://localhost:5000/api/mensagens/marcar-como-lidas/${destinatarioId}`,
+                    `https://escolinha.paranoa.com.br/api/mensagens/marcar-como-lidas/${destinatarioId}`,
                     {},
                     { headers: { Authorization: `Bearer ${token}` } }
                 );

@@ -112,8 +112,8 @@ function Login() {
         setError(''); 
 
         try {
-            console.log('Tentando fazer login com:', email, password); // Logando os dados de login
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
+            console.log('Tentando fazer login com:', email, password);
+            const response = await axios.post('https://escolinha.paranoa.com.br/api/auth/login', {
                 email: email,
                 senha: password,
             });

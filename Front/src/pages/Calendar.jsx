@@ -148,14 +148,6 @@ const LegendContainer = styled.div`
     border-radius: 5px;
   }
 
-  .tem-aula {
-    background: var(--DwYellow);
-  }
-
-  .sem-aula {
-    background: var(--DwBoldGray);
-  }
-
   .hoje {
     background: white;
     border: solid red 1px;
@@ -189,22 +181,55 @@ const Calendario = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [reload, setReload] = useState(false);
   const [aniversarios, setAniversarios] = useState([]);
+  const [turmas, setTurmas] = useState([]);
+  const [turmaSelecionada, setTurmaSelecionada] = useState("");
 
   useEffect(() => {
-    const fetchCalendario = async () => {
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const decodedToken = JSON.parse(atob(token.split(".")[1]));
+      setRole(decodedToken.role); 
+    } catch (error) {
+      console.error("Erro ao decodificar token:", error);
+    }
+
+
+
+    const fetchTurmas = async () => {
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado.");
-        return;
-      }
+      if (!token) return;
 
       try {
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        setRole(decodedToken.role);
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTurmas(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar turmas:", error);
+      }
+    };
+    fetchTurmas();
+  }, []);
 
-        const url = decodedToken.role === "aluno"
-          ? "http://localhost:5000/api/alunos/calendario"
-          : "http://localhost:5000/api/professores/calendario";
+
+  useEffect(() => {
+    if (!turmaSelecionada) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const fetchCalendario = async () => {
+      try {
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const role = decodedToken.role;
+
+        const url =
+          role === "aluno"
+            ? `https://escolinha.paranoa.com.br/api/alunos/calendario?turmaId=${turmaSelecionada}`
+            : `https://escolinha.paranoa.com.br/api/professores/calendario?turmaId=${turmaSelecionada}`;
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` },
@@ -214,31 +239,24 @@ const Calendario = () => {
           ...dia,
           data: new Date(dia.data).toISOString().split("T")[0],
         }));
-        setReload(!reload);
+
         setDatas(datasFormatadas);
       } catch (error) {
-        console.error("Erro ao buscar calendário", error);
+        console.error("Erro ao buscar calendário:", error);
       }
     };
 
-    fetchCalendario();
-  }, [reload]);
-
-
-  useEffect(() => {
     const fetchAniversariantes = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/alunos/aniversariantes", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        const response = await axios.get(
+          `https://escolinha.paranoa.com.br/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         const hoje = new Date();
         const anoAtual = hoje.getFullYear();
 
-        // Transforma os aniversariantes em uma lista de datas no formato 'YYYY-MM-DD'
-        const datasAniversarios = response.data.map(aluno => {
+        const datasAniversarios = response.data.map((aluno) => {
           const [ano, mes, dia] = aluno.nasc.split("T")[0].split("-");
           const dataFormatada = new Date(anoAtual, Number(mes) - 1, Number(dia));
           return dataFormatada.toISOString().split("T")[0];
@@ -250,8 +268,9 @@ const Calendario = () => {
       }
     };
 
+    fetchCalendario();
     fetchAniversariantes();
-  }, []);
+  }, [turmaSelecionada]);
 
 
   const handleDayClick = (date) => {
@@ -261,7 +280,6 @@ const Calendario = () => {
 
   const toggleDayStatus = async () => {
     if (role !== "professor") {
-      alert("Você não tem permissão para alterar o calendário.");
       return;
     }
 
@@ -284,8 +302,8 @@ const Calendario = () => {
     try {
       if (diaExistente && diaExistente.id) {
         await axios.put(
-          `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
-          { temAula },
+          `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
+          {  temAula, turma_id: turmaSelecionada  },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -296,8 +314,8 @@ const Calendario = () => {
         );
       } else {
         const response = await axios.post(
-          "http://localhost:5000/api/professores/calendario",
-          { data: dateString, temAula },
+          "https://escolinha.paranoa.com.br/api/professores/calendario",
+          {  data: dateString, temAula, turma_id: turmaSelecionada },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -381,7 +399,7 @@ const Calendario = () => {
           }
 
           await axios.delete(
-            `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
+            `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log(`Dia letivo ${dateString} excluído com sucesso.`);
@@ -404,7 +422,7 @@ const Calendario = () => {
   const handleAvisoClick = (aviso, diaData) => {
     if (aviso && aviso.trim() !== "") {
       setModalMessage(aviso);
-      setSelectedDay(new Date(diaData)); // Passa o objeto Date, que contém a data original
+      setSelectedDay(new Date(diaData));
       setIsModalOpen(true);
     }
   };
@@ -427,7 +445,7 @@ const Calendario = () => {
 
     const token = localStorage.getItem("token");
     // A URL agora usa a data formatada, como o backend espera
-    const url = `http://localhost:5000/api/professores/calendario/${formattedDate}/aviso`;
+    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${formattedDate}/aviso`;
 
     try {
       await axios.put(
@@ -472,7 +490,6 @@ const Calendario = () => {
 
           return (
             <>
-              {/* Ícone de aviso (!), posicionado centralmente na parte inferior */}
               {dia?.aviso && dia.aviso.trim() !== "" && (
                 <Aviso
                   onClick={() => handleAvisoClick(dia.aviso, dia.data)}
@@ -485,7 +502,6 @@ const Calendario = () => {
                 />
               )}
 
-              {/* Ícone de bolo 🎂 no canto superior direito */}
               {isAniversario && (
                 <FaCakeCandles
                   style={{
@@ -504,6 +520,18 @@ const Calendario = () => {
         }}
       />
       <LegendAndNoticeContainer>
+        <select
+          value={turmaSelecionada}
+          onChange={(e) => setTurmaSelecionada(e.target.value)}
+          className="border rounded-md p-2"
+        >
+          <option value="">Selecione uma turma</option>
+          {turmas.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nome}
+            </option>
+          ))}
+        </select>
 
         <NoticeBoard />
         <BirthdayBoard />
