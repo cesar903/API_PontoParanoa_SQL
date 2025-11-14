@@ -30,7 +30,7 @@ const LegendContainer = styled.div`
 `;
 
 
-const BirthdayBoard = () => {
+const BirthdayBoard = ({ turmaId }) => {
     const [aniversariantes, setAniversariantes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -41,7 +41,8 @@ const BirthdayBoard = () => {
             const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/aniversariantes", {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`
-              }
+              },
+              params: { turmaId }
             });
       
             const hoje = new Date();
@@ -68,7 +69,7 @@ const BirthdayBoard = () => {
         };
       
         fetchAniversariantes();
-      }, []);
+      }, [turmaId]);
       
 
     const formatarData = (dataStr) => {

@@ -191,19 +191,26 @@ exports.verCalendarioAluno = async (req, res) => {
 
 
 exports.verAvisos = async (req, res) => {
+    const { turmaId } = req.query;
     try {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
         const limite = new Date();
-        limite.setDate(limite.getDate() + 10);
+        limite.setDate(hoje.getDate() + 10); 
         limite.setHours(23, 59, 59, 999);
 
+        const where = {
+            data: { [Op.between]: [hoje, limite] },
+            aviso: { [Op.ne]: "" },
+        };
+
+        if (turmaId) {
+            where.turma_id = turmaId;
+        }
+
         const avisos = await Calendario.findAll({
-            where: {
-                data: { [Op.between]: [hoje, limite] },
-                aviso: { [Op.ne]: "" },
-            },
+            where,
             order: [["data", "ASC"]],
         });
 

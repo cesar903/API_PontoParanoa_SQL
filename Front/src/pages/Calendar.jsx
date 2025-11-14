@@ -23,6 +23,18 @@ const CalendarContainer = styled.div`
     gap: 2rem;
   }
 
+  .tem-aula {
+    background: var(--DwYellow);
+    color: white;
+    border-color: white;
+  }
+
+  .sem-aula {
+    background: var(--DwBoldGray);
+    color: white;
+    border-color: white;
+  }
+
   .react-calendar {
     border: none;
     border-radius: 15px;
@@ -173,6 +185,33 @@ const LegendAndNoticeContainer = styled.div`
     margin-top: 1rem;
   }
 `;
+
+const ContainerSelect = styled.div`
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--DwBoldGray);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+
+  select {
+    padding: 10px 15px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    background: var(--DwYellow);
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+  }
+`;
+
+
+
 const Calendario = () => {
   const [datas, setDatas] = useState([]);
   const [role, setRole] = useState(null);
@@ -497,48 +536,8 @@ const Calendario = () => {
 
 
   return (
-    <CalendarContainer>
-      <Calendar
-        onClickDay={handleDayClick}
-        tileClassName={tileClassName}
-        locale="pt-BR"
-        tileContent={({ date }) => {
-          const dateString = date.toISOString().split("T")[0];
-          const dia = datas.find((dia) => dia.data === dateString);
-          const isAniversario = aniversarios.includes(dateString);
-
-          return (
-            <>
-              {dia?.aviso && dia.aviso.trim() !== "" && (
-                <Aviso
-                  onClick={() => handleAvisoClick(dia.aviso, dia.data)}
-                  style={{
-                    bottom: "4px",
-                    marginLeft: "5px",
-                    transform: "translateX(-50%)",
-                    zIndex: 10
-                  }}
-                />
-              )}
-
-              {isAniversario && (
-                <FaCakeCandles
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    right: "6px",
-                    color: "#9b59b6",
-                    fontSize: "1rem",
-                    zIndex: 10
-                  }}
-                  title="Aniversariante"
-                />
-              )}
-            </>
-          );
-        }}
-      />
-      <LegendAndNoticeContainer>
+    <>
+      <ContainerSelect>
         <select
           value={turmaSelecionada}
           onChange={(e) => setTurmaSelecionada(e.target.value)}
@@ -551,20 +550,64 @@ const Calendario = () => {
             </option>
           ))}
         </select>
+      </ContainerSelect>
+      <CalendarContainer>
+        <Calendar
+          onClickDay={handleDayClick}
+          tileClassName={tileClassName}
+          locale="pt-BR"
+          tileContent={({ date }) => {
+            const dateString = date.toISOString().split("T")[0];
+            const dia = datas.find((dia) => dia.data === dateString);
+            const isAniversario = aniversarios.includes(dateString);
 
-        <NoticeBoard />
-        <BirthdayBoard />
-        <LegendContainer>
-          <div className="legend-item"><div className="color-box tem-aula" /> Aula</div>
-          <div className="legend-item"><div className="color-box sem-aula" /> Sem aula</div>
-          <div className="legend-item"><div className="color-box hoje" />Hoje</div>
-        </LegendContainer>
-      </LegendAndNoticeContainer>
+            return (
+              <>
+                {dia?.aviso && dia.aviso.trim() !== "" && (
+                  <Aviso
+                    onClick={() => handleAvisoClick(dia.aviso, dia.data)}
+                    style={{
+                      bottom: "4px",
+                      marginLeft: "5px",
+                      transform: "translateX(-50%)",
+                      zIndex: 10
+                    }}
+                  />
+                )}
 
-      {role == "professor" ? <AddInfo turmaSelecionada={turmaSelecionada} onAvisoAdicionado={atualizarCalendario} /> : ""}
+                {isAniversario && (
+                  <FaCakeCandles
+                    style={{
+                      position: "absolute",
+                      top: "4px",
+                      right: "6px",
+                      color: "#9b59b6",
+                      fontSize: "1rem",
+                      zIndex: 10
+                    }}
+                    title="Aniversariante"
+                  />
+                )}
+              </>
+            );
+          }}
+        />
 
-      {isModalOpen && <ModalInfo message={modalMessage} onClose={() => setIsModalOpen(false)} isProfessor={role === "professor"} onSave={handleSaveAviso} />}
-    </CalendarContainer>
+        <LegendAndNoticeContainer>
+          <NoticeBoard turmaSelecionada={turmaSelecionada} onAvisoAdicionado={reload} />
+          <BirthdayBoard turmaId={turmaSelecionada} />
+          <LegendContainer>
+            <div className="legend-item"><div className="color-box tem-aula" /> Aula</div>
+            <div className="legend-item"><div className="color-box sem-aula" /> Sem aula</div>
+            <div className="legend-item"><div className="color-box hoje" />Hoje</div>
+          </LegendContainer>
+        </LegendAndNoticeContainer>
+
+        {role == "professor" ? <AddInfo turmaSelecionada={turmaSelecionada} onAvisoAdicionado={atualizarCalendario} /> : ""}
+
+        {isModalOpen && <ModalInfo message={modalMessage} onClose={() => setIsModalOpen(false)} isProfessor={role === "professor"} onSave={handleSaveAviso} />}
+      </CalendarContainer>
+    </>
   );
 };
 

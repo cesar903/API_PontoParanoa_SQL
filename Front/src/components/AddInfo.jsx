@@ -125,8 +125,6 @@ function AddInfo({ turmaSelecionada, onAvisoAdicionado }) {
         }
     };
 
-
-
     return (
         <>
             <AddManualButton onClick={handleAddManualPonto}>

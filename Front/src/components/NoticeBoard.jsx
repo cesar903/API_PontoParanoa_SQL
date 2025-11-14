@@ -29,41 +29,34 @@ const LegendContainer = styled.div`
   }
 `;
 
-const NoticeBoard = () => {
+const NoticeBoard = ({turmaSelecionada, onAvisoAdicionado}) => {
     const [avisos, setAvisos] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    const fetchAvisos = async () => {
+        if (!turmaSelecionada) return;
+        setLoading(true);
+
+        try {
+            const response = await axios.get(
+                `https://escolinha.paranoa.com.br/api/alunos/avisos?turmaId=${turmaSelecionada}`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            );
+
+            setAvisos(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar avisos:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     useEffect(() => {
-        const fetchAvisos = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/avisos", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
-
-                // Pegando data atual e limite de 10 dias para frente
-                const hoje = new Date();
-                const limite = new Date();
-                limite.setDate(hoje.getDate() + 10);
-
-                // Filtrando avisos dentro do intervalo
-                const avisosFiltrados = response.data.filter(aviso => {
-                    const dataAviso = new Date(aviso.data);
-                    return dataAviso >= hoje && dataAviso <= limite;
-                });
-
-                setAvisos(avisosFiltrados);
-            } catch (error) {
-                console.error("Erro ao buscar avisos:", error);
-            }finally {
-                setLoading(false);
-            }
-        };
-
         fetchAvisos();
-    }, []);
+    }, [turmaSelecionada, onAvisoAdicionado]);
+
+    if (loading) return <div>Carregando avisos...</div>;
 
 
     return (
