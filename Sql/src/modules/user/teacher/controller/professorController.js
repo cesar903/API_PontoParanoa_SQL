@@ -255,7 +255,7 @@ exports.atualizarDiaLetivo = async (req, res) => {
         if (!dia) return res.status(404).json({ msg: "Dia não encontrado" });
 
         dia.temAula = temAula;
-        dia.turma_id = turma_id; 
+        dia.turma_id = turma_id;
 
         console.log(turma_id)
         console.log(temAula)
@@ -286,26 +286,24 @@ exports.excluirDiaLetivo = async (req, res) => {
         res.status(500).json({ msg: "Erro ao excluir dia letivo" });
     }
 };
+
+
 exports.adicionarAviso = async (req, res) => {
-    let { data } = req.params; // Data no formato YYYY-MM-DD
+    let { turmaId, data } = req.params;
     const { aviso } = req.body;
-
-    // Garantir que a data seja apenas no formato "YYYY-MM-DD"
-    data = data.substring(0, 10); // Caso venha com mais caracteres, pegamos só os primeiros 10
-
+    data = data.substring(0, 10);
     try {
-        // Buscar no banco a data exata como string (YYYY-MM-DD)
         const dia = await Calendario.findOne({
-            where: { data: data } // Usando where para filtrar a data
+            where: {
+                data: data,
+                turma_id: turmaId 
+            }
         });
-
         if (!dia) {
-            return res.status(404).json({ msg: "Dia não encontrado" });
+            return res.status(404).json({ msg: "Dia não encontrado para essa turma" });
         }
-
-        dia.aviso = aviso; // Atualiza o aviso do dia
-        await dia.save(); // Salva as alterações
-
+        dia.aviso = aviso;
+        await dia.save();
         res.json({ msg: "Aviso atualizado com sucesso!", dia });
     } catch (error) {
         console.error("Erro ao adicionar aviso:", error);

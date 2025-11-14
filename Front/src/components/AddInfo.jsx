@@ -72,7 +72,7 @@ const ModalButton = styled.button`
   }
 `;
 
-function AddInfo() {
+function AddInfo({ turmaSelecionada, onAvisoAdicionado }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         dia: "",
@@ -98,17 +98,24 @@ function AddInfo() {
             alert("Você não está autenticado. Faça login novamente.");
             return;
         }
+
+        if (!turmaSelecionada) {
+            alert("Selecione uma turma antes de adicionar um aviso!");
+            return;
+        }
+
+
         setLoading(true);
         try {
             const dataFormatada = formData.dia;
 
             await axios.patch(
-                `https://escolinha.paranoa.com.br/api/professores/calendario/${encodeURIComponent(dataFormatada)}/aviso`,
+                `https://escolinha.paranoa.com.br/api/professores/calendario/${turmaSelecionada}/${encodeURIComponent(dataFormatada)}/aviso`,
                 { aviso: formData.aviso },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            alert("Aviso adicionado com sucesso!");
+            if (onAvisoAdicionado) onAvisoAdicionado()
             setModalOpen(false);
         } catch (error) {
             console.error("Erro ao adicionar aviso:", error);

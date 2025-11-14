@@ -50,8 +50,8 @@ router.get("/calendario", authMiddleware, professorMiddleware, listarCalendario)
 router.post("/calendario", authMiddleware, professorMiddleware, cadastrarDiaLetivo);
 router.put("/calendario/:id", authMiddleware, professorMiddleware, atualizarDiaLetivo);
 router.delete("/calendario/:id", authMiddleware, professorMiddleware, excluirDiaLetivo);
-router.patch("/calendario/:data/aviso", authMiddleware, professorMiddleware, adicionarAviso);
-router.put("/calendario/:data/aviso", authMiddleware, professorMiddleware, adicionarAviso);
+router.patch("/calendario/:turmaId/:data/aviso", authMiddleware, professorMiddleware, adicionarAviso);
+router.put("/calendario/:turmaId/:data/aviso", authMiddleware, professorMiddleware, adicionarAviso);
 router.get("/contar-faltas/:alunoId", authMiddleware, professorMiddleware, contarFaltas);
 router.post("/usuarios", authMiddleware, professorMiddleware, cadastrarUsuario);
 router.get("/relatorio/:alunoId", authMiddleware, professorMiddleware, gerarRelatorio);

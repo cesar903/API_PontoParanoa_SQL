@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Calendar from "react-calendar";
 import axios from "axios";
 import styled from "styled-components";
@@ -191,7 +191,7 @@ const Calendario = () => {
 
     try {
       const decodedToken = JSON.parse(atob(token.split(".")[1]));
-      setRole(decodedToken.role); 
+      setRole(decodedToken.role);
     } catch (error) {
       console.error("Erro ao decodificar token:", error);
     }
@@ -206,7 +206,14 @@ const Calendario = () => {
         const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTurmas(response.data);
+        const turmasRecebidas = response.data;
+        setTurmas(turmasRecebidas);
+
+        if (turmasRecebidas.length > 0) {
+          setTurmaSelecionada(turmasRecebidas[0].id.toString());
+        }
+
+
       } catch (error) {
         console.error("Erro ao buscar turmas:", error);
       }
@@ -215,62 +222,70 @@ const Calendario = () => {
   }, []);
 
 
+  const fetchCalendario = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      const role = decodedToken.role;
+
+      const url =
+        role === "aluno"
+          ? `https://escolinha.paranoa.com.br/api/alunos/calendario?turmaId=${turmaSelecionada}`
+          : `https://escolinha.paranoa.com.br/api/professores/calendario?turmaId=${turmaSelecionada}`;
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const datasFormatadas = response.data.map((dia) => ({
+        ...dia,
+        data: new Date(dia.data).toISOString().split("T")[0],
+      }));
+
+      setDatas(datasFormatadas);
+    } catch (error) {
+      console.error("Erro ao buscar calendário:", error);
+    }
+  }, [turmaSelecionada]);
+
+
+  const fetchAniversariantes = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await axios.get(
+        `https://escolinha.paranoa.com.br/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const hoje = new Date();
+      const anoAtual = hoje.getFullYear();
+
+      const datasAniversarios = response.data.map((aluno) => {
+        const [ano, mes, dia] = aluno.nasc.split("T")[0].split("-");
+        const dataFormatada = new Date(anoAtual, Number(mes) - 1, Number(dia));
+        return dataFormatada.toISOString().split("T")[0];
+      });
+
+      setAniversarios(datasAniversarios);
+    } catch (error) {
+      console.error("Erro ao buscar aniversariantes:", error);
+    }
+  };
+
+
   useEffect(() => {
     if (!turmaSelecionada) return;
 
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const fetchCalendario = async () => {
-      try {
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        const role = decodedToken.role;
-
-        const url =
-          role === "aluno"
-            ? `https://escolinha.paranoa.com.br/api/alunos/calendario?turmaId=${turmaSelecionada}`
-            : `https://escolinha.paranoa.com.br/api/professores/calendario?turmaId=${turmaSelecionada}`;
-
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const datasFormatadas = response.data.map((dia) => ({
-          ...dia,
-          data: new Date(dia.data).toISOString().split("T")[0],
-        }));
-
-        setDatas(datasFormatadas);
-      } catch (error) {
-        console.error("Erro ao buscar calendário:", error);
-      }
-    };
-
-    const fetchAniversariantes = async () => {
-      try {
-        const response = await axios.get(
-          `https://escolinha.paranoa.com.br/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const hoje = new Date();
-        const anoAtual = hoje.getFullYear();
-
-        const datasAniversarios = response.data.map((aluno) => {
-          const [ano, mes, dia] = aluno.nasc.split("T")[0].split("-");
-          const dataFormatada = new Date(anoAtual, Number(mes) - 1, Number(dia));
-          return dataFormatada.toISOString().split("T")[0];
-        });
-
-        setAniversarios(datasAniversarios);
-      } catch (error) {
-        console.error("Erro ao buscar aniversariantes:", error);
-      }
-    };
-
     fetchCalendario();
     fetchAniversariantes();
-  }, [turmaSelecionada]);
+  }, [turmaSelecionada, fetchCalendario]);
 
 
   const handleDayClick = (date) => {
@@ -303,7 +318,7 @@ const Calendario = () => {
       if (diaExistente && diaExistente.id) {
         await axios.put(
           `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
-          {  temAula, turma_id: turmaSelecionada  },
+          { temAula, turma_id: turmaSelecionada },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -315,7 +330,7 @@ const Calendario = () => {
       } else {
         const response = await axios.post(
           "https://escolinha.paranoa.com.br/api/professores/calendario",
-          {  data: dateString, temAula, turma_id: turmaSelecionada },
+          { data: dateString, temAula, turma_id: turmaSelecionada },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -445,7 +460,7 @@ const Calendario = () => {
 
     const token = localStorage.getItem("token");
     // A URL agora usa a data formatada, como o backend espera
-    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${formattedDate}/aviso`;
+    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${turmaSelecionada}/${formattedDate}/aviso`;
 
     try {
       await axios.put(
@@ -467,6 +482,10 @@ const Calendario = () => {
     } catch (error) {
       console.error("Erro ao atualizar aviso", error);
     }
+  };
+
+  const atualizarCalendario = () => {
+    fetchCalendario();
   };
 
   <ModalInfo
@@ -542,7 +561,7 @@ const Calendario = () => {
         </LegendContainer>
       </LegendAndNoticeContainer>
 
-      {role == "professor" ? <AddInfo /> : ""}
+      {role == "professor" ? <AddInfo turmaSelecionada={turmaSelecionada} onAvisoAdicionado={atualizarCalendario} /> : ""}
 
       {isModalOpen && <ModalInfo message={modalMessage} onClose={() => setIsModalOpen(false)} isProfessor={role === "professor"} onSave={handleSaveAviso} />}
     </CalendarContainer>
