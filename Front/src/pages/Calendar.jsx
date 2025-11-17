@@ -287,19 +287,14 @@ const Calendario = () => {
           }
         }
 
-
-
-
         return {
           id: dia.id || dia.pk_calendario,
           data: dataFormatada,
           temAula: dia.temAula ?? dia.fl_tem_aula ?? false,
-          aviso: dia.aviso ?? dia.ds_aviso ?? "",
+          aviso: dia.aviso && dia.aviso.trim() !== "" ? dia.aviso : null,
           id_turma: dia.turma_id || dia.id_turma,
         };
       });
-
-      console.log(datasFormatadas)
 
       setDatas(datasFormatadas);
     } catch (error) {
@@ -414,28 +409,21 @@ const Calendario = () => {
     let classes = "";
 
     if (registrosDoDia.length > 0) {
-      // se algum registro tiver temAula true, considera como dia com aula
       const temAula = registrosDoDia.some((d) => d.temAula);
       classes += temAula ? " tem-aula" : " sem-aula";
     } else {
-      // fins de semana como sem aula
       if (date.getDay() === 0 || date.getDay() === 6) {
         classes += " sem-aula";
       }
     }
-
     if (dateString === todayString) {
       classes += " hoje";
     }
-
     if (aniversarios.includes(dateString)) {
       classes += " aniversario";
     }
-
     return classes.trim();
   };
-
-
 
 
   useEffect(() => {

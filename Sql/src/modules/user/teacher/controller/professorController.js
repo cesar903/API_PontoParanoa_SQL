@@ -231,7 +231,7 @@ exports.listarCalendario = async (req, res) => {
                 "id_turma",
                 ["dt_aula", "data"],
                 "fl_tem_aula",
-                ["ds_aviso", "aviso"],
+                [Sequelize.literal(`NULLIF(ds_aviso, '')`), "aviso"],
                 "dt_criado_em",
                 "hr_inicio",
                 "hr_fim",

@@ -2,7 +2,7 @@ const Ponto = require("../../../point/models/Ponto");
 const { Calendario, Turmas, User } = require("../../../associations/models/associations");
 
 const moment = require("moment-timezone");
-const { Op } = require("sequelize");
+const { Op, Sequelize  } = require("sequelize");
 
 
 
@@ -150,12 +150,11 @@ exports.adicionarPontoManual = async (req, res) => {
 
 exports.verCalendarioAluno = async (req, res) => {
     try {
-        console.log("Chamooou listar calendario aluno")
         if (req.user.role !== "aluno")
             return res.status(403).json({ msg: "Acesso negado. Somente alunos podem visualizar." });
 
+        const { id } = req.user;
         const { turmaId } = req.query;
-        const userId = req.user.id;
 
         if (!turmaId) {
             return res.status(400).json({ msg: "É necessário informar a turmaId." });
@@ -167,7 +166,7 @@ exports.verCalendarioAluno = async (req, res) => {
                 {
                     model: User,
                     as: "alunos",
-                    where: { pk_usuario: userId },
+                    where: { pk_usuario: id },
                     attributes: ["pk_usuario"],
                     through: { attributes: [] },
                 },
@@ -181,14 +180,26 @@ exports.verCalendarioAluno = async (req, res) => {
         const calendario = await Calendario.findAll({
             where: { id_turma: turmaId },
             order: [["dt_aula", "ASC"]],
+            attributes: [
+                ["pk_calendario", "id"],
+                "id_turma",
+                ["dt_aula", "data"],
+                ["fl_tem_aula", "temAula"],
+                [Sequelize.literal(`NULLIF(ds_aviso, '')`), "aviso"],
+                "dt_criado_em",
+                "hr_inicio",
+                "hr_fim",
+            ],
         });
 
         res.json(calendario);
+
     } catch (error) {
         console.error("Erro ao buscar calendário:", error);
         res.status(500).json({ msg: "Erro ao buscar calendário." });
     }
 };
+
 
 exports.verAvisos = async (req, res) => {
     const { turmaId } = req.query;

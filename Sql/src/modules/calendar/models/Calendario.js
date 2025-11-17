@@ -30,7 +30,7 @@ const Calendario = sequelize.define(
     ds_aviso: {
       type: DataTypes.TEXT,
       allowNull: true,
-      defaultValue: "",
+      defaultValue: null,
     },
 
     dt_criado_em: {

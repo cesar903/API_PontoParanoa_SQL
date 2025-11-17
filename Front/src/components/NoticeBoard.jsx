@@ -43,6 +43,8 @@ const NoticeBoard = ({ turmaSelecionada, onAvisoAdicionado }) => {
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
+            console.log(response.data)
+
             setAvisos(response.data);
         } catch (error) {
             console.error("Erro ao buscar avisos:", error);
@@ -67,20 +69,22 @@ const NoticeBoard = ({ turmaSelecionada, onAvisoAdicionado }) => {
                 <p>Não há avisos.</p>
             ) : (
                 <ul>
-                    {avisos.map((aviso) => {
-                        const dataFormatada = aviso.data
-                            ? aviso.data.split("-").reverse().join("/")
-                            : "Data não definida";
+                    {avisos
+                        .filter(aviso => aviso.aviso && aviso.aviso.trim() !== "")
+                        .map((aviso) => {
+                            const dataFormatada = aviso.data
+                                ? aviso.data.split("-").reverse().join("/")
+                                : "Data não definida";
 
-                        return (
-                            <li key={aviso.id}>
-                                <strong>{dataFormatada}</strong>: {aviso.aviso || ""}
-                            </li>
-                        );
-                    })}
+                            return (
+                                <li key={aviso.id}>
+                                    <strong>{dataFormatada}</strong>: {aviso.aviso}
+                                </li>
+                            );
+                        })
+                    }
                 </ul>
-    )
-}
+            )}
         </LegendContainer >
     );
 
