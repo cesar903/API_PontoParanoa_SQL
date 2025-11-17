@@ -165,16 +165,17 @@ exports.cadastrarDiaLetivo = async (req, res) => {
 
     try {
         const turma = await Turmas.findOne({
-            where: { id: turma_id, professor_id: professorId, ativa: true },
+            where: { pk_turma: turma_id, id_professor: professorId, fl_ativa: true },
         });
 
         if (!turma) {
             return res.status(403).json({ msg: "Você não é responsável por essa turma ou ela está inativa." });
         }
+
         const novoDia = await Calendario.create({
-            data,
-            temAula,
-            turma_id,
+            dt_aula: data,
+            fl_tem_aula: temAula,
+            id_turma: turma_id,
         });
 
         res.status(201).json(novoDia);
@@ -184,49 +185,62 @@ exports.cadastrarDiaLetivo = async (req, res) => {
     }
 };
 
+
 exports.listarCalendario = async (req, res) => {
     try {
-        const { role, id } = req.user; // vem do token decodificado
+        const { role, id } = req.user;
         const { turmaId } = req.query;
 
         if (role !== "professor") {
             return res.status(403).json({ msg: "Acesso negado. Somente professores podem visualizar." });
         }
-
-        // Se não for enviada uma turma específica, busca todas as turmas do professor
         if (!turmaId) {
             const turmasDoProfessor = await Turmas.findAll({
-                where: { professor_id: id, ativa: true },
-                attributes: ["id", "nome", "descricao"],
+                where: { id_professor: id, fl_ativa: true },
+                attributes: ["pk_turma", "nm_turma", "ds_turma"],
             });
 
             if (!turmasDoProfessor.length) {
                 return res.status(404).json({ msg: "Nenhuma turma vinculada ao professor." });
             }
 
-            const turmaIds = turmasDoProfessor.map((t) => t.id);
+            const turmaIds = turmasDoProfessor.map(t => t.pk_turma);
 
             const calendario = await Calendario.findAll({
-                where: { turma_id: turmaIds },
+                where: { id_turma: turmaIds },
+                order: [["dt_data", "ASC"]],
             });
 
             return res.json(calendario);
         }
-
-
         const turma = await Turmas.findOne({
-            where: { id: turmaId, professor_id: id, ativa: true },
+            where: { pk_turma: turmaId, id_professor: id, fl_ativa: true },
         });
 
         if (!turma) {
-            return res.status(403).json({ msg: "Você não tem permissão para acessar esta turma." });
+            return res
+                .status(403)
+                .json({ msg: "Você não tem permissão para acessar esta turma." });
         }
 
         const calendario = await Calendario.findAll({
-            where: { turma_id: turmaId },
+            where: { id_turma: turmaId },
+            order: [["dt_aula", "ASC"]],
+            attributes: [
+                ["pk_calendario", "id"],
+                "id_turma",
+                ["dt_aula", "data"],
+                "fl_tem_aula",
+                ["ds_aviso", "aviso"],
+                "dt_criado_em",
+                "hr_inicio",
+                "hr_fim",
+            ],
         });
 
+
         return res.json(calendario);
+
     } catch (error) {
         console.error("Erro ao buscar calendário:", error);
         res.status(500).json({ msg: "Erro ao buscar calendário." });
@@ -234,7 +248,7 @@ exports.listarCalendario = async (req, res) => {
 };
 
 exports.atualizarDiaLetivo = async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // ou data, se quiser atualizar pelo dia
     const { temAula, turma_id } = req.body;
     const professorId = req.user.id;
 
@@ -243,43 +257,46 @@ exports.atualizarDiaLetivo = async (req, res) => {
     }
 
     try {
+        // valida se o professor é responsável pela turma
         const turma = await Turmas.findOne({
-            where: { id: turma_id, professor_id: professorId, ativa: true },
+            where: { pk_turma: turma_id, id_professor: professorId, fl_ativa: true },
         });
 
         if (!turma) {
             return res.status(403).json({ msg: "Você não é responsável por essa turma ou ela está inativa." });
         }
 
+        // busca todos os registros do dia
         const dia = await Calendario.findByPk(id);
         if (!dia) return res.status(404).json({ msg: "Dia não encontrado" });
 
-        dia.temAula = temAula;
-        dia.turma_id = turma_id;
-
-        console.log(turma_id)
-        console.log(temAula)
-        console.log(dia)
-
+        // atualiza o campo fl_tem_aula
+        dia.fl_tem_aula = temAula;
+        dia.id_turma = turma_id;
 
         await dia.save();
 
         res.json({ msg: "Dia letivo atualizado com sucesso!", dia });
+
     } catch (error) {
         console.error("Erro ao atualizar dia letivo:", error);
         res.status(500).json({ msg: "Erro ao atualizar dia letivo", error: error.message });
     }
 };
+
+
+
+
 exports.excluirDiaLetivo = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const dia = await Calendario.findByPk(id); // Usando findByPk para buscar pelo id
+        const dia = await Calendario.findByPk(id); // PK correta
         if (!dia) {
             return res.status(404).json({ msg: "Dia letivo não encontrado" });
         }
 
-        await Calendario.destroy({ where: { id } }); // Usando destroy para deletar pelo id
+        await Calendario.destroy({ where: { pk_calendario: id } }); // usar pk_calendario
         res.json({ msg: "Dia letivo excluído com sucesso!" });
     } catch (error) {
         console.error("Erro ao excluir dia letivo:", error);
@@ -288,26 +305,35 @@ exports.excluirDiaLetivo = async (req, res) => {
 };
 
 
+
 exports.adicionarAviso = async (req, res) => {
     let { turmaId, data } = req.params;
     const { aviso } = req.body;
     data = data.substring(0, 10);
+
+    console.log("Aviso recebido:", aviso);
+    console.log("Data:", data);
+    console.log("Turma ID:", turmaId);
+
     try {
         const dia = await Calendario.findOne({
             where: {
-                data: data,
-                turma_id: turmaId 
+                dt_aula: data,
+                id_turma: turmaId
             }
         });
+
         if (!dia) {
             return res.status(404).json({ msg: "Dia não encontrado para essa turma" });
         }
-        dia.aviso = aviso;
+
+        dia.ds_aviso = aviso;
         await dia.save();
+
         res.json({ msg: "Aviso atualizado com sucesso!", dia });
     } catch (error) {
         console.error("Erro ao adicionar aviso:", error);
-        res.status(500).json({ msg: "Erro ao adicionar aviso" });
+        res.status(500).json({ msg: "Erro ao adicionar aviso", error: error.message });
     }
 };
 

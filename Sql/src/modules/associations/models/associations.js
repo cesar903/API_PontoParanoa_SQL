@@ -5,56 +5,114 @@ const Ponto = require("../../point/models/Ponto");
 const Faltas = require("../../fouls/models/Faltas");
 const Mensagem = require("../../messages/models/Mensagem");
 const Calendario = require("../../calendar/models/Calendario");
-const AlunosTurmas = require("../../classesStudents/models/alunosTurmas");
 
 
-User.hasMany(Ponto, { foreignKey: "aluno_id", as: "pontos" });
-Ponto.belongsTo(User, { foreignKey: "aluno_id", as: "aluno" });
+User.hasMany(Ponto, {
+    foreignKey: "id_aluno",
+    sourceKey: "pk_usuario",
+    as: "pontos",
+});
+Ponto.belongsTo(User, {
+    foreignKey: "id_aluno",
+    targetKey: "pk_usuario",
+    as: "aluno",
+});
 
-User.hasMany(Faltas, { foreignKey: "aluno_id", as: "faltas" });
-Faltas.belongsTo(User, { foreignKey: "aluno_id", as: "aluno" });
+User.hasMany(Faltas, {
+    foreignKey: "id_aluno",
+    sourceKey: "pk_usuario",
+    as: "faltas",
+});
+Faltas.belongsTo(User, {
+    foreignKey: "id_aluno",
+    targetKey: "pk_usuario",
+    as: "aluno",
+});
+
+Calendario.hasMany(Ponto, {
+    foreignKey: "id_calendario",
+    as: "pontos",
+});
+Ponto.belongsTo(Calendario, {
+    foreignKey: "id_calendario",
+    as: "calendario",
+});
+
+Calendario.hasMany(Faltas, {
+    foreignKey: "id_calendario",
+    as: "faltas",
+});
+Faltas.belongsTo(Calendario, {
+    foreignKey: "id_calendario",
+    as: "calendario",
+});
 
 
-Calendario.hasMany(Ponto, { foreignKey: "calendario_id", as: "pontos" });
-Ponto.belongsTo(Calendario, { foreignKey: "calendario_id", as: "calendario" });
+User.hasMany(Mensagem, {
+    foreignKey: "id_remetente",
+    sourceKey: "pk_usuario",
+    as: "mensagensEnviadas",
+});
+User.hasMany(Mensagem, {
+    foreignKey: "id_destinatario",
+    sourceKey: "pk_usuario",
+    as: "mensagensRecebidas",
+});
 
-Calendario.hasMany(Faltas, { foreignKey: "calendario_id", as: "faltas" });
-Faltas.belongsTo(Calendario, { foreignKey: "calendario_id", as: "calendario" });
+Mensagem.belongsTo(User, {
+    foreignKey: "id_remetente",
+    targetKey: "pk_usuario",
+    as: "remetente",
+});
+Mensagem.belongsTo(User, {
+    foreignKey: "id_destinatario",
+    targetKey: "pk_usuario",
+    as: "destinatario",
+});
 
 
-User.hasMany(Mensagem, { foreignKey: "remetente_id", as: "mensagensEnviadas" });
-User.hasMany(Mensagem, { foreignKey: "destinatario_id", as: "mensagensRecebidas" });
-Mensagem.belongsTo(User, { foreignKey: "remetente_id", as: "remetente" });
-Mensagem.belongsTo(User, { foreignKey: "destinatario_id", as: "destinatario" });
-
-
-User.hasMany(Turmas, { foreignKey: "professor_id", as: "turmasMinistradas" });
-Turmas.belongsTo(User, { foreignKey: "professor_id", as: "professor" });
+User.hasMany(Turmas, {
+    foreignKey: "id_professor",
+    sourceKey: "pk_usuario",
+    as: "turmasMinistradas",
+});
+Turmas.belongsTo(User, {
+    foreignKey: "id_professor",
+    targetKey: "pk_usuario",
+    as: "professor",
+});
 
 
 User.belongsToMany(Turmas, {
     through: AlunoTurmas,
-    foreignKey: "aluno_id",
-    otherKey: "turma_id",
+    foreignKey: "id_aluno",
+    otherKey: "id_turma",
+    sourceKey: "pk_usuario",
     as: "turmas",
 });
 
 Turmas.belongsToMany(User, {
     through: AlunoTurmas,
-    foreignKey: "turma_id",
-    otherKey: "aluno_id",
+    foreignKey: "id_turma",
+    otherKey: "id_aluno",
+    targetKey: "pk_usuario",
     as: "alunos",
 });
 
 
-Turmas.hasMany(Calendario, { foreignKey: "turma_id", as: "calendarios" });
-Calendario.belongsTo(Turmas, { foreignKey: "turma_id", as: "turma" });
-
+Turmas.hasMany(Calendario, {
+    foreignKey: "id_turma",
+    as: "calendarios",
+});
+Calendario.belongsTo(Turmas, {
+    foreignKey: "id_turma",
+    as: "turma",
+});
 
 module.exports = {
     User,
     Turmas,
-    AlunosTurmas,
+    AlunoTurmas,
     Ponto,
     Faltas,
     Mensagem,

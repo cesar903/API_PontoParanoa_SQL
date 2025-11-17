@@ -11,19 +11,14 @@ const login = async (req, res) => {
 
   try {
     const user = await User.findOne({
-      where: { email },
+      where: { ds_email: email },
       include: [
         {
           model: Turmas,
           as: "turmas",
-          attributes: ["id", "nome", "descricao", "ativa"],
-          through: { attributes: [] }, // remove dados intermediários
-        },
-        {
-          model: Turmas,
-          as: "turmasMinistradas",
-          attributes: ["id", "nome", "descricao", "ativa"],
-        },
+          attributes: ["pk_turma", "nm_turma", "ds_turma", "fl_ativa"],
+          through: { attributes: [] },
+        }
       ],
     });
 
@@ -31,17 +26,17 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: "Credenciais inválidas!" });
     }
 
-    const senhaValida = await bcrypt.compare(senha, user.senha);
+    const senhaValida = await bcrypt.compare(senha, user.ds_senha_hash);
     if (!senhaValida) {
       return res.status(400).json({ msg: "Credenciais inválidas!" });
     }
 
     const token = jwt.sign(
       {
-        id: user.id,
-        role: user.role,
-        nome: user.nome,
-        professor_tipo: user.professor_tipo,
+        id: user.pk_usuario,
+        role: user.tp_usuario,
+        nome: user.nm_usuario,
+        professor_tipo: user.id_professor_tipo,
       },
       process.env.JWT_SECRET,
       { expiresIn: "12h" }
@@ -50,13 +45,16 @@ const login = async (req, res) => {
     const payload = {
       token,
       user: {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        role: user.role,
-        professor_tipo: user.professor_tipo,
+        id: user.pk_usuario,
+        nome: user.nm_usuario,
+        email: user.ds_email,
+        role: user.tp_usuario,
+        professor_tipo: user.id_professor_tipo,
+        turmas: user.id_professor_tipo
       },
     };
+    
+    console.log(payload)
 
     return res.status(200).json(payload);
   } catch (error) {
@@ -64,6 +62,8 @@ const login = async (req, res) => {
     return res.status(500).json({ msg: "Erro no servidor." });
   }
 };
+
+
 
 
 

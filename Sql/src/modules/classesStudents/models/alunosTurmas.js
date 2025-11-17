@@ -5,20 +5,34 @@ const { sequelize } = require("../../../config/db");
 const AlunosTurmas = sequelize.define(
   "AlunosTurmas",
   {
-    id: {
+    pk_aluno_turma: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    aluno_id: {
+
+    id_aluno: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "usuarios",
+        key: "pk_usuario",
+      },
+      onDelete: "CASCADE",
     },
-    turma_id: {
+
+
+    id_turma: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "turmas",
+        key: "pk_turma", 
+      },
+      onDelete: "CASCADE",
     },
-    created_at: {
+
+    dt_criado_em: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
@@ -28,10 +42,11 @@ const AlunosTurmas = sequelize.define(
     tableName: "alunos_turmas",
     timestamps: false,
     underscored: true,
+
     indexes: [
       {
         unique: true,
-        fields: ["aluno_id", "turma_id"],
+        fields: ["id_aluno", "id_turma"],
         name: "uk_aluno_turma",
       },
     ],

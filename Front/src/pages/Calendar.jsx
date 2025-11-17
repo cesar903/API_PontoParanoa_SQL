@@ -245,18 +245,18 @@ const Calendario = () => {
         const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const turmasRecebidas = response.data;
+
+        const turmasRecebidas = response.data; // ✅ declarada corretamente
         setTurmas(turmasRecebidas);
 
         if (turmasRecebidas.length > 0) {
           setTurmaSelecionada(turmasRecebidas[0].id.toString());
         }
-
-
       } catch (error) {
         console.error("Erro ao buscar turmas:", error);
       }
     };
+
     fetchTurmas();
   }, []);
 
@@ -278,16 +278,35 @@ const Calendario = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const datasFormatadas = response.data.map((dia) => ({
-        ...dia,
-        data: new Date(dia.data).toISOString().split("T")[0],
-      }));
+      const datasFormatadas = response.data.map(dia => {
+        let dataFormatada = null;
+        if (dia.data) {
+          const d = new Date(dia.data);
+          if (!isNaN(d.getTime())) {
+            dataFormatada = d.toISOString().split("T")[0];
+          }
+        }
+
+
+
+
+        return {
+          id: dia.id || dia.pk_calendario,
+          data: dataFormatada,
+          temAula: dia.temAula ?? dia.fl_tem_aula ?? false,
+          aviso: dia.aviso ?? dia.ds_aviso ?? "",
+          id_turma: dia.turma_id || dia.id_turma,
+        };
+      });
+
+      console.log(datasFormatadas)
 
       setDatas(datasFormatadas);
     } catch (error) {
       console.error("Erro ao buscar calendário:", error);
     }
   }, [turmaSelecionada]);
+
 
 
   const fetchAniversariantes = async () => {
@@ -362,6 +381,7 @@ const Calendario = () => {
         );
 
         setDatas((prevDatas) =>
+
           prevDatas.map((dia) =>
             dia.data === dateString ? { ...dia, temAula } : dia
           )
@@ -388,14 +408,17 @@ const Calendario = () => {
 
   const tileClassName = ({ date }) => {
     const dateString = date.toISOString().split("T")[0];
-    const dia = datas.find((d) => d.data === dateString);
+    const registrosDoDia = datas.filter((d) => d.data === dateString);
     const todayString = new Date().toISOString().split("T")[0];
 
     let classes = "";
 
-    if (dia) {
-      classes += dia.temAula ? " tem-aula" : " sem-aula";
+    if (registrosDoDia.length > 0) {
+      // se algum registro tiver temAula true, considera como dia com aula
+      const temAula = registrosDoDia.some((d) => d.temAula);
+      classes += temAula ? " tem-aula" : " sem-aula";
     } else {
+      // fins de semana como sem aula
       if (date.getDay() === 0 || date.getDay() === 6) {
         classes += " sem-aula";
       }
@@ -411,6 +434,7 @@ const Calendario = () => {
 
     return classes.trim();
   };
+
 
 
 

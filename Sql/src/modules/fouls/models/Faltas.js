@@ -5,40 +5,53 @@ const { sequelize } = require("../../../config/db");
 const Faltas = sequelize.define(
   "Faltas",
   {
-    id: {
+    pk_falta: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+      field: "pk_falta"
     },
-    aluno_id: {
+
+    id_aluno: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: "usuarios",
+        key: "pk_usuario",
       },
       onDelete: "CASCADE",
     },
-    calendario_id: {
+
+    id_calendario: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: "calendarios",
-        key: "id",
+        key: "pk_calendario",
       },
       onDelete: "CASCADE",
     },
-    data: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    justificada: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    motivo: {
-      type: DataTypes.TEXT,
+
+
+    ds_motivo: {
+      type: DataTypes.STRING,
+      allowNull: true,
       defaultValue: "",
+      field: "ds_motivo",
+    },
+
+    fl_gerada_auto: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "fl_gerada_auto",
+    },
+
+    dt_criado_em: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+      field: "dt_criado_em",
     },
   },
   {

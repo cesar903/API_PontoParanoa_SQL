@@ -5,38 +5,53 @@ const { sequelize } = require("../../../config/db");
 const Calendario = sequelize.define(
   "Calendario",
   {
-    id: {
+    pk_calendario: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    turma_id: {
+
+    id_turma: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    data: {
+
+    dt_aula: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    temAula: {
+
+    fl_tem_aula: {
       type: DataTypes.BOOLEAN,
-      field: "tem_aula",
       allowNull: false,
       defaultValue: true,
     },
-    aviso: {
+
+    ds_aviso: {
       type: DataTypes.TEXT,
+      allowNull: true,
       defaultValue: "",
     },
-    created_at: {
+
+    dt_criado_em: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+
+    hr_inicio: {
+      type: DataTypes.TIME,
+      allowNull: true,
+    },
+
+    hr_fim: {
+      type: DataTypes.TIME,
+      allowNull: true,
+    },
   },
   {
     tableName: "calendarios",
-    timestamps: false, 
+    timestamps: false,
     underscored: true,
   }
 );

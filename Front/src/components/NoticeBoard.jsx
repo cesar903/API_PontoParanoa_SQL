@@ -29,7 +29,7 @@ const LegendContainer = styled.div`
   }
 `;
 
-const NoticeBoard = ({turmaSelecionada, onAvisoAdicionado}) => {
+const NoticeBoard = ({ turmaSelecionada, onAvisoAdicionado }) => {
     const [avisos, setAvisos] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -67,21 +67,23 @@ const NoticeBoard = ({turmaSelecionada, onAvisoAdicionado}) => {
                 <p>Não há avisos.</p>
             ) : (
                 <ul>
-                    {avisos.map((aviso) => (
-                        <li key={aviso.id}>
-                            <strong>
-                                {aviso.data
-                                    .split("-")
-                                    .reverse()
-                                    .join("/")}
-                            </strong>
-                            : {aviso.aviso}
-                        </li>
-                    ))}
+                    {avisos.map((aviso) => {
+                        const dataFormatada = aviso.data
+                            ? aviso.data.split("-").reverse().join("/")
+                            : "Data não definida";
+
+                        return (
+                            <li key={aviso.id}>
+                                <strong>{dataFormatada}</strong>: {aviso.aviso || ""}
+                            </li>
+                        );
+                    })}
                 </ul>
-            )}
-        </LegendContainer>
+    )
+}
+        </LegendContainer >
     );
+
 };
 
 export default NoticeBoard;

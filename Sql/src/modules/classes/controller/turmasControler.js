@@ -12,17 +12,27 @@ exports.listarTurmasUsuario = async (req, res) => {
           {
             model: User,
             as: "alunos",
-            where: { id },
+            where: { pk_usuario: id }, // coluna correta
             attributes: [],
             through: { attributes: [] },
           },
         ],
-        attributes: ["id", "nome", "descricao", "ativa"],
+        attributes: [
+          ["pk_turma", "id"],
+          ["nm_turma", "nome"],
+          ["ds_turma", "descricao"],
+          ["fl_ativa", "ativa"]
+        ],
       });
     } else if (role === "professor") {
       turmas = await Turmas.findAll({
-        where: { professor_id: id },
-        attributes: ["id", "nome", "descricao", "ativa"],
+        where: { id_professor: id }, // coluna correta
+        attributes: [
+          ["pk_turma", "id"],
+          ["nm_turma", "nome"],
+          ["ds_turma", "descricao"],
+          ["fl_ativa", "ativa"]
+        ],
       });
     } else {
       return res.status(403).json({ msg: "Usuário sem permissão." });

@@ -150,6 +150,7 @@ exports.adicionarPontoManual = async (req, res) => {
 
 exports.verCalendarioAluno = async (req, res) => {
     try {
+        console.log("Chamooou listar calendario aluno")
         if (req.user.role !== "aluno")
             return res.status(403).json({ msg: "Acesso negado. Somente alunos podem visualizar." });
 
@@ -161,13 +162,13 @@ exports.verCalendarioAluno = async (req, res) => {
         }
 
         const turma = await Turmas.findOne({
-            where: { id: turmaId, ativa: true },
+            where: { pk_turma: turmaId, fl_ativa: true },
             include: [
                 {
                     model: User,
                     as: "alunos",
-                    where: { id: userId },
-                    attributes: ["id"],
+                    where: { pk_usuario: userId },
+                    attributes: ["pk_usuario"],
                     through: { attributes: [] },
                 },
             ],
@@ -178,8 +179,8 @@ exports.verCalendarioAluno = async (req, res) => {
         }
 
         const calendario = await Calendario.findAll({
-            where: { turma_id: turmaId },
-            order: [["data", "ASC"]],
+            where: { id_turma: turmaId },
+            order: [["dt_aula", "ASC"]],
         });
 
         res.json(calendario);
@@ -189,42 +190,34 @@ exports.verCalendarioAluno = async (req, res) => {
     }
 };
 
-
 exports.verAvisos = async (req, res) => {
     const { turmaId } = req.query;
+
+    if (!turmaId) {
+        return res.status(400).json({ msg: "É necessário informar a turmaId." });
+    }
+
     try {
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
-        const limite = new Date();
-        limite.setDate(hoje.getDate() + 10); 
-        limite.setHours(23, 59, 59, 999);
-
-        const where = {
-            data: { [Op.between]: [hoje, limite] },
-            aviso: { [Op.ne]: "" },
-        };
-
-        if (turmaId) {
-            where.turma_id = turmaId;
-        }
-
-        const avisos = await Calendario.findAll({
-            where,
-            order: [["data", "ASC"]],
+        const dias = await Calendario.findAll({
+            where: { id_turma: turmaId },
+            attributes: ["pk_calendario", "dt_aula", "ds_aviso", "id_turma"],
         });
 
-        const avisosCorrigidos = avisos.map(aviso => ({
-            ...aviso.toJSON(),
-            data: new Date(aviso.data).toISOString().split("T")[0]
+        const avisosFormatados = dias.map(dia => ({
+            id: dia.pk_calendario,
+            data: dia.dt_aula,   // já está no formato 'YYYY-MM-DD'
+            aviso: dia.ds_aviso,
+            id_turma: dia.id_turma
         }));
 
-        res.json(avisosCorrigidos);
+        res.json(avisosFormatados);
     } catch (error) {
         console.error("Erro ao buscar avisos:", error);
-        res.status(500).json({ msg: "Erro ao buscar avisos." });
+        res.status(500).json({ msg: "Erro ao buscar avisos" });
     }
 };
+
+
 
 exports.verPontosComAlunos = async (req, res) => {
     try {
@@ -295,13 +288,17 @@ exports.verAniversariantesDoMes = async (req, res) => {
                 {
                     model: Turmas,
                     as: "turmas",
-                    where: { id: turmaId },
+                    where: { pk_turma: turmaId }, // coluna correta
                     attributes: [],
                     through: { attributes: [] },
                 },
             ],
-            attributes: ["id", "nome", "nasc"],
-            where: { role: "aluno" },
+            attributes: [
+                ["pk_usuario", "id"],
+                ["nm_usuario", "nome"],
+                ["dt_nascimento", "nasc"]
+            ],
+            where: { tp_usuario: "aluno" },
         });
 
         res.json(alunos);
@@ -310,6 +307,7 @@ exports.verAniversariantesDoMes = async (req, res) => {
         res.status(500).json({ msg: "Erro ao buscar aniversariantes." });
     }
 };
+
 
 // Função auxiliar
 function calcularDistancia(lat1, lon1, lat2, lon2) {

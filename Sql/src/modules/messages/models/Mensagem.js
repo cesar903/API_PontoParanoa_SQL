@@ -5,51 +5,63 @@ const { sequelize } = require("../../../config/db");
 const Mensagem = sequelize.define(
   "Mensagem",
   {
-    id: {
+    pk_mensagem: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+      field: "pk_mensagem",
     },
-    conteudo: {
+
+    ds_conteudo: {
       type: DataTypes.TEXT,
       allowNull: false,
+      field: "ds_conteudo",
     },
-    lida: {
+
+    fl_lida: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+      field: "fl_lida",
     },
-    remetente_id: {
+
+    id_remetente: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: "usuarios",
+        key: "pk_usuario",
       },
       onDelete: "CASCADE",
     },
-    destinatario_id: {
+
+    id_destinatario: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: "usuarios",
+        key: "pk_usuario",
       },
       onDelete: "CASCADE",
     },
-    created_at: {
+
+
+    dt_criado_em: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: "dt_criado_em",
     },
-    updated_at: {
+
+    dt_atualizado_em: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: "dt_atualizado_em",
     },
   },
   {
     tableName: "mensagens",
-    timestamps: false, 
+    timestamps: false,
     underscored: true,
   }
 );
