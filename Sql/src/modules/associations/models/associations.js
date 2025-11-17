@@ -5,6 +5,7 @@ const Ponto = require("../../point/models/Ponto");
 const Faltas = require("../../fouls/models/Faltas");
 const Mensagem = require("../../messages/models/Mensagem");
 const Calendario = require("../../calendar/models/Calendario");
+const Endereco = require("../../address/models/address");
 
 
 User.hasMany(Ponto, {
@@ -109,6 +110,19 @@ Calendario.belongsTo(Turmas, {
     as: "turma",
 });
 
+User.hasOne(Endereco, {
+  foreignKey: "pk_usuario",
+  sourceKey: "pk_usuario",
+  as: "endereco",
+});
+
+Endereco.belongsTo(User, {
+  foreignKey: "pk_usuario",
+  targetKey: "pk_usuario",
+  as: "usuario",
+});
+
+
 module.exports = {
     User,
     Turmas,
@@ -117,4 +131,5 @@ module.exports = {
     Faltas,
     Mensagem,
     Calendario,
+    Endereco,
 };
