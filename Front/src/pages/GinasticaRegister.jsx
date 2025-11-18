@@ -279,7 +279,7 @@ export default function GinasticaRegister() {
 
         try {
             const res = await axios.post(
-                "https://escolinha.paranoa.com.br/api/acronis/formulario",
+                "http://localhost:5000/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );

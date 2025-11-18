@@ -2,7 +2,7 @@ const Ponto = require("../../../point/models/Ponto");
 const { Calendario, Turmas, User } = require("../../../associations/models/associations");
 
 const moment = require("moment-timezone");
-const { Op, Sequelize  } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 
 
 
@@ -12,117 +12,100 @@ exports.verPontos = async (req, res) => {
             const { alunoId } = req.params;
             if (!alunoId) return res.status(400).json({ msg: "ID do aluno é necessário." });
 
-            const pontos = await Ponto.findAll({ where: { alunoId } });
+            const pontos = await Ponto.findAll({
+                where: { id_aluno: alunoId },
+                order: [["pk_ponto", "ASC"]]
+            });
+
             return res.json(pontos);
         }
 
-        const pontos = await Ponto.findAll({ where: { alunoId: req.user.id } });
+        const pontos = await Ponto.findAll({
+            where: { id_aluno: req.user.id },
+            order: [["pk_ponto", "ASC"]]
+        });
+
         res.json(pontos);
     } catch (error) {
         res.status(500).json({ msg: "Erro ao buscar os pontos.", error });
     }
 };
 
+
 exports.fazerCheckin = async (req, res) => {
     try {
-        const { latitude, longitude } = req.body;
+        const { latitude, longitude, id_turma } = req.body;
 
-        //Localizaçao super geeks
-        //const ESCOLA_LATITUDE = -23.711746920183902
-        //const ESCOLA_LONGITUDE = -46.54635611175074
-
-        //Localizaçao paranoa
-        //const ESCOLA_LATITUDE = -23.69825590739253
-        //const ESCOLA_LONGITUDE = -46.59110882551491
-
-        //Localizaçao casa 
-        const ESCOLA_LATITUDE = -23.795757
-        const ESCOLA_LONGITUDE = -46.548611
-
-        const RAIO_PERMITIDO_METROS = 200;
-
-        // if (!latitude || !longitude)
-        //     return res.status(400).json({ msg: "Localização não fornecida." });
-
-        // const distancia = calcularDistancia(latitude, longitude, ESCOLA_LATITUDE, ESCOLA_LONGITUDE);
-        // if (distancia > RAIO_PERMITIDO_METROS)
-        //     return res.status(403).json({ msg: "Check-in permitido apenas dentro da escola." });
+        if (!id_turma) {
+            return res.status(400).json({ msg: "Você deve selecionar uma turma." });
+        }
 
         const agora = new Date();
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
 
-        // const checkinExistente = await Ponto.findOne({
-        //     where: {
-        //         alunoId: req.user.id,
-        //         entrada: { [Op.gte]: hoje },
-        //     },
-        // });
+        const hoje = new Date().toISOString().split("T")[0];
 
-        // if (checkinExistente)
-        //     return res.status(400).json({ msg: "Você já fez check-in hoje." });
+        const calendario = await Calendario.findOne({
+            where: {
+                dt_aula: hoje,
+                id_turma: id_turma,
+            }
+        });
 
-        const aluno = await User.findByPk(req.user.id);
-        if (!aluno || !aluno.turma)
-            return res.status(400).json({ msg: "Turma do aluno não definida." });
+        console.log(id_turma)
+        console.log(agora)
+        console.log(hoje)
 
-        let horaInicio, minutoInicio, horaFim, minutoFim;
-        const horaAtual = agora.getHours();
-        const minutosAtuais = agora.getMinutes();
-
-        // if (aluno.turma === "manha") {
-        //     horaInicio = 11; minutoInicio = 0;
-        //     horaFim = 23; minutoFim = 0;
-        // } else if (aluno.turma === "tarde") {
-        //     horaInicio = 16; minutoInicio = 30;
-        //     horaFim = 17; minutoFim = 30;
-        // } else {
-        //     return res.status(400).json({ msg: "Turma inválida." });
-        // }
-
-        // const dentroDoHorario =
-        //     (horaAtual > horaInicio || (horaAtual === horaInicio && minutosAtuais >= minutoInicio)) &&
-        //     (horaAtual < horaFim || (horaAtual === horaFim && minutosAtuais <= minutoFim));
-
-        // if (!dentroDoHorario)
-        //     return res.status(403).json({ msg: "Check-in permitido apenas no horário correto." });
+        if (!calendario) {
+            return res.status(400).json({ msg: "Nenhum calendário encontrado para hoje." });
+        }
 
         await Ponto.create({
-            alunoId: req.user.id,
-            entrada: agora,
-            status: "pendente",
-            isOn: true,
-            latitude,
-            longitude
+            id_aluno: req.user.id,
+            id_turma,
+            id_calendario: calendario.pk_calendario,
+            dt_entrada: agora,
+            fl_is_on: true,
+            tp_status: "pendente"
         });
 
         res.status(201).json({ msg: "Check-in registrado!" });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: "Erro ao registrar o check-in." });
     }
 };
 
+
+
+
+
 exports.fazerCheckout = async (req, res) => {
     try {
-        const ponto = await Ponto.findOne({
-            where: { alunoId: req.user.id, status: "pendente" },
-            order: [["entrada", "DESC"]],
+        const agora = new Date();
+
+        const pontoAberto = await Ponto.findOne({
+            where: {
+                id_aluno: req.user.id,
+                fl_is_on: true,
+            },
+            order: [["pk_ponto", "DESC"]],
         });
 
-        if (!ponto) return res.status(400).json({ msg: "Nenhum check-in pendente encontrado." });
+        if (!pontoAberto)
+            return res.status(400).json({ msg: "Nenhum check-in ativo encontrado." });
 
-        ponto.saida = new Date();
-        ponto.status = "pendente";
-        ponto.isOn = false;
-        await ponto.save();
+        pontoAberto.dt_saida = agora;
+        pontoAberto.fl_is_on = false;
+        await pontoAberto.save();
 
-        res.status(200).json({ msg: "Check-out registrado!" });
+        res.json({ msg: "Check-out registrado!" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: "Erro ao registrar o check-out." });
     }
 };
+
 
 exports.adicionarPontoManual = async (req, res) => {
     try {

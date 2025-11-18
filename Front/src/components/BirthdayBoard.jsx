@@ -38,7 +38,7 @@ const BirthdayBoard = ({ turmaId }) => {
     useEffect(() => {
         const fetchAniversariantes = async () => {
           try {
-            const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/aniversariantes", {
+            const response = await axios.get("http://localhost:5000/api/alunos/aniversariantes", {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`
               },

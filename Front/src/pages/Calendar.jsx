@@ -242,7 +242,7 @@ const Calendario = () => {
       if (!token) return;
 
       try {
-        const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+        const response = await axios.get("http://localhost:5000/api/usuario", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -271,8 +271,8 @@ const Calendario = () => {
 
       const url =
         role === "aluno"
-          ? `https://escolinha.paranoa.com.br/api/alunos/calendario?turmaId=${turmaSelecionada}`
-          : `https://escolinha.paranoa.com.br/api/professores/calendario?turmaId=${turmaSelecionada}`;
+          ? `http://localhost:5000/api/alunos/calendario?turmaId=${turmaSelecionada}`
+          : `http://localhost:5000/api/professores/calendario?turmaId=${turmaSelecionada}`;
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -286,9 +286,6 @@ const Calendario = () => {
             dataFormatada = d.toISOString().split("T")[0];
           }
         }
-
-        console.log("Dados Recebidos qo atualizar calendario: ", response.data)
-
         return {
           id: dia.id ?? dia.pk_calendario ?? dia.pk ?? null,
           data: dia.data ?? dia.dt_aula ?? dia.dt_data ?? null,
@@ -312,7 +309,7 @@ const Calendario = () => {
 
     try {
       const response = await axios.get(
-        `https://escolinha.paranoa.com.br/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
+        `http://localhost:5000/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -362,7 +359,7 @@ const Calendario = () => {
     try {
       if (diaExistente && diaExistente.id) {
         await axios.put(
-          `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
+          `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
           { temAula, turma_id: turmaSelecionada },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -379,7 +376,7 @@ const Calendario = () => {
       }
 
       const response = await axios.post(
-        "https://escolinha.paranoa.com.br/api/professores/calendario",
+        "http://localhost:5000/api/professores/calendario",
         { data: dateString, temAula, turma_id: turmaSelecionada },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -468,7 +465,7 @@ const Calendario = () => {
           }
 
           await axios.delete(
-            `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
+            `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log(`Dia letivo ${dateString} excluído com sucesso.`);
@@ -514,7 +511,7 @@ const Calendario = () => {
 
     const token = localStorage.getItem("token");
     // A URL agora usa a data formatada, como o backend espera
-    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${turmaSelecionada}/${formattedDate}/aviso`;
+    const url = `http://localhost:5000/api/professores/calendario/${turmaSelecionada}/${formattedDate}/aviso`;
 
     try {
       await axios.put(
