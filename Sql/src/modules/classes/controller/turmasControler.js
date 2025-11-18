@@ -26,7 +26,15 @@ exports.listarTurmasUsuario = async (req, res) => {
       });
     } else if (role === "professor") {
       turmas = await Turmas.findAll({
-        where: { id_professor: id }, // coluna correta
+        include: [
+          {
+            model: User,
+            as: "professores",
+            where: { pk_usuario: id },
+            attributes: [],
+            through: { attributes: [] },
+          },
+        ],
         attributes: [
           ["pk_turma", "id"],
           ["nm_turma", "nome"],

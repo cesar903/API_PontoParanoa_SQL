@@ -50,7 +50,7 @@ const Calendario = sequelize.define(
     },
   },
   {
-    tableName: "calendarios",
+    tableName: "tb_calendario",
     timestamps: false,
     underscored: true,
   }

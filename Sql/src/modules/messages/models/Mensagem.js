@@ -60,7 +60,7 @@ const Mensagem = sequelize.define(
     },
   },
   {
-    tableName: "mensagens",
+    tableName: "tb_mensagem",
     timestamps: false,
     underscored: true,
   }

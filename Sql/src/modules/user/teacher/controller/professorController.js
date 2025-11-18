@@ -3,12 +3,17 @@ const Calendario = require("../../../calendar/models/Calendario");
 const User = require("../../models/User")
 const Falta = require("../../../fouls/models/Faltas")
 const Turmas = require("../../../classes/models/Turmas")
+const AlunosTurmas = require("../../../classesStudents/models/alunosTurmas");
+const ProfessorTipo = require("../../teacher/models/professor")
+const TurmaProfessor = require("../models/turmaProfessor");
+const Endereco = require("../../../address/models/address");
 const bcrypt = require("bcryptjs");
 const moment = require("moment");
 const moment2 = require("moment-timezone");
 const { format } = require('date-fns');
 const { Sequelize } = require('sequelize');
 const { Op } = require('sequelize');
+const { sequelize } = require("../../../../config/db")
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
@@ -34,53 +39,123 @@ exports.listarPontosPendentes = async (req, res) => {
 };
 
 exports.cadastrarUsuario = async (req, res) => {
-    // Desestruturação dos dados enviados no corpo da requisição
-    const { nome, email, senha, nasc, cpf, endereco, turma, role, professorTipo, karate, ginastica } = req.body;
 
-    // Verificação para garantir que todos os campos obrigatórios foram preenchidos
-    if (!nome || !email || !senha || !nasc || !role || !endereco || !cpf) {
+    const {
+        nome,
+        email,
+        senha,
+        nasc,
+        cpf,
+        endereco,
+        role,
+        professorTipo,
+        turmas,
+    } = req.body;
+
+    if (!nome || !email || !senha || !cpf || !endereco || !nasc || !role) {
         return res.status(400).json({ msg: "Todos os campos são obrigatórios" });
     }
 
     try {
-        // Verifica se já existe um usuário com o e-mail informado
-        const usuarioExistente = await User.findOne({ where: { email } });
+        const usuarioExistente = await User.findOne({ where: { ds_email: email } });
         if (usuarioExistente) {
             return res.status(400).json({ msg: "E-mail já cadastrado" });
         }
+    } catch (error) {
+        console.error("Erro ao verificar usuário:", error);
+        return res.status(500).json({ msg: "Erro interno ao verificar usuário." });
+    }
 
-        // Criptografa a senha usando bcrypt antes de salvar no banco de dados
+    const t = await sequelize.transaction();
+
+    try {
         const senhaHash = await bcrypt.hash(senha, 10);
+        let idProfessorTipo = null;
 
-        console.log(karate)
+        const novoUsuario = await User.create({
+            nm_usuario: nome,
+            ds_email: email,
+            ds_senha_hash: senhaHash,
+            nr_cpf: cpf,
+            dt_nascimento: nasc,
+            tp_usuario: role,
+            id_professor_tipo: null,
+            ds_foto_3_4: null,
+            dt_criado_em: new Date(),
+            dt_atualizado_em: new Date(),
+        }, { transaction: t });
 
-        // Cria um novo usuário com os dados fornecidos
-        const novoUsuario = new User({
-            nome,
-            email,
-            senha: senhaHash,
-            nasc,
-            cpf,
-            endereco,
-            turma,
-            role,
-            professorTipo,
-            karate,
-            ginastica
+
+        await Endereco.create({
+            pk_logradouro: endereco.pk_logradouro || null,
+            ds_logradouro: endereco.ds_logradouro,
+            ds_numero: endereco.ds_numero,
+            ds_complemento: endereco.ds_complemento,
+            nm_bairro: endereco.nm_bairro,
+            nm_cidade: endereco.nm_cidade,
+            sg_estado: endereco.sg_estado,
+            nr_cep: endereco.nr_cep,
+            pk_usuario: novoUsuario.pk_usuario,
+        }, { transaction: t });
+
+        if (role === "professor") {
+            const novoTipo = await ProfessorTipo.create({
+                nm_professor_tipo: professorTipo.nomeTipo,
+                ds_descricao: professorTipo.descricao,
+            }, { transaction: t });
+            idProfessorTipo = novoTipo.pk_professor_tipo;
+
+            await novoUsuario.update({
+                id_professor_tipo: idProfessorTipo
+            }, { transaction: t });
+
+            if (turmas && turmas.length > 0) {
+                const associacoesProfessorTurma = turmas.map(turmaId => ({
+                    id_professor: novoUsuario.pk_usuario,
+                    id_turma: turmaId,
+                }));
+
+                await TurmaProfessor.bulkCreate(associacoesProfessorTurma, { transaction: t });
+            }
+        }
+
+        if (role === "aluno" || (role !== "professor" && turmas && turmas.length > 0)) {
+            const associacoesAlunoTurma = turmas.map(turmaId => ({
+                id_aluno: novoUsuario.pk_usuario,
+                id_turma: turmaId,
+                dt_criado_em: new Date(),
+            }));
+            await AlunosTurmas.bulkCreate(associacoesAlunoTurma, { transaction: t });
+        }
+
+        await t.commit();
+        return res.status(201).json({
+            msg: "Cadastrado com sucesso!",
+            usuario: { id: novoUsuario.pk_usuario, role: role },
         });
 
-        // Salva o novo usuário no banco de dados
-        await novoUsuario.save();
-
-        // Resposta de sucesso
-        res.status(201).json({ msg: "Usuário cadastrado com sucesso!" });
     } catch (error) {
-        console.error("Erro ao cadastrar usuário:", error);
+        await t.rollback();
+        console.error("Erro ao cadastrar usuário (Transação desfeita):", error);
         res.status(500).json({ msg: "Erro ao cadastrar usuário" });
     }
 };
 
 
+
+exports.listarTurmas = async (req, res) => {
+    try {
+        const turmas = await Turmas.findAll({
+            where: { fl_ativa: true }
+        });
+
+        return res.json(turmas);
+
+    } catch (error) {
+        console.error("Erro ao listar turmas:", error);
+        return res.status(500).json({ msg: "Erro ao buscar turmas" });
+    }
+};
 
 exports.aprovarOuRejeitarPonto = async (req, res) => {
     const { id } = req.params;
@@ -165,7 +240,14 @@ exports.cadastrarDiaLetivo = async (req, res) => {
 
     try {
         const turma = await Turmas.findOne({
-            where: { pk_turma: turma_id, id_professor: professorId, fl_ativa: true },
+            where: { pk_turma: turma_id, fl_ativa: true },
+            include: [{
+                model: User,
+                as: 'professores',
+                where: { pk_usuario: professorId },
+                attributes: [],
+                required: true,
+            }],
         });
 
         if (!turma) {
@@ -195,9 +277,17 @@ exports.listarCalendario = async (req, res) => {
             return res.status(403).json({ msg: "Acesso negado. Somente professores podem visualizar." });
         }
         if (!turmaId) {
+
             const turmasDoProfessor = await Turmas.findAll({
-                where: { id_professor: id, fl_ativa: true },
+                where: { fl_ativa: true },
                 attributes: ["pk_turma", "nm_turma", "ds_turma"],
+                include: [{
+                    model: User,
+                    as: 'professores',
+                    where: { pk_usuario: id },
+                    attributes: [],
+                    through: { attributes: [] }
+                }],
             });
 
             if (!turmasDoProfessor.length) {
@@ -208,19 +298,27 @@ exports.listarCalendario = async (req, res) => {
 
             const calendario = await Calendario.findAll({
                 where: { id_turma: turmaIds },
-                order: [["dt_data", "ASC"]],
+                order: [["dt_data", "data"]],
             });
 
             return res.json(calendario);
         }
+
         const turma = await Turmas.findOne({
-            where: { pk_turma: turmaId, id_professor: id, fl_ativa: true },
+            where: { pk_turma: turmaId, fl_ativa: true },
+            include: [{
+                model: User,
+                as: 'professores',
+                where: { pk_usuario: id },
+                attributes: [],
+                through: { attributes: [] }
+            }],
         });
 
         if (!turma) {
             return res
                 .status(403)
-                .json({ msg: "Você não tem permissão para acessar esta turma." });
+                .json({ msg: "Você não tem permissão para acessar esta turma ou ela não existe." });
         }
 
         const calendario = await Calendario.findAll({
@@ -228,9 +326,9 @@ exports.listarCalendario = async (req, res) => {
             order: [["dt_aula", "ASC"]],
             attributes: [
                 ["pk_calendario", "id"],
-                "id_turma",
+                ["id_turma", "id_turma"],
                 ["dt_aula", "data"],
-                "fl_tem_aula",
+                ["fl_tem_aula", "temAula"],
                 [Sequelize.literal(`NULLIF(ds_aviso, '')`), "aviso"],
                 "dt_criado_em",
                 "hr_inicio",
@@ -248,7 +346,7 @@ exports.listarCalendario = async (req, res) => {
 };
 
 exports.atualizarDiaLetivo = async (req, res) => {
-    const { id } = req.params; // ou data, se quiser atualizar pelo dia
+    const { id } = req.params;
     const { temAula, turma_id } = req.body;
     const professorId = req.user.id;
 
@@ -257,26 +355,37 @@ exports.atualizarDiaLetivo = async (req, res) => {
     }
 
     try {
-        // valida se o professor é responsável pela turma
         const turma = await Turmas.findOne({
-            where: { pk_turma: turma_id, id_professor: professorId, fl_ativa: true },
+            where: { pk_turma: turma_id, fl_ativa: true },
+            include: [{
+                model: User,
+                as: 'professores',
+                where: { pk_usuario: professorId },
+                required: true,
+                attributes: []
+            }],
         });
 
         if (!turma) {
             return res.status(403).json({ msg: "Você não é responsável por essa turma ou ela está inativa." });
         }
 
-        // busca todos os registros do dia
-        const dia = await Calendario.findByPk(id);
-        if (!dia) return res.status(404).json({ msg: "Dia não encontrado" });
+        const [updatedCount] = await Calendario.update(
+            { fl_tem_aula: temAula },
+            {
+                where: {
+                    pk_calendario: id,
+                    id_turma: turma_id
+                }
+            }
+        );
 
-        // atualiza o campo fl_tem_aula
-        dia.fl_tem_aula = temAula;
-        dia.id_turma = turma_id;
+        if (updatedCount === 0) {
+            return res.status(404).json({ msg: "Dia letivo não encontrado ou não pertence à turma especificada." });
+        }
 
-        await dia.save();
-
-        res.json({ msg: "Dia letivo atualizado com sucesso!", dia });
+        const diaAtualizado = await Calendario.findByPk(id);
+        res.json({ msg: "Dia letivo atualizado com sucesso!", dia: diaAtualizado });
 
     } catch (error) {
         console.error("Erro ao atualizar dia letivo:", error);
@@ -291,12 +400,12 @@ exports.excluirDiaLetivo = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const dia = await Calendario.findByPk(id); // PK correta
+        const dia = await Calendario.findByPk(id);
         if (!dia) {
             return res.status(404).json({ msg: "Dia letivo não encontrado" });
         }
 
-        await Calendario.destroy({ where: { pk_calendario: id } }); // usar pk_calendario
+        await Calendario.destroy({ where: { pk_calendario: id } });
         res.json({ msg: "Dia letivo excluído com sucesso!" });
     } catch (error) {
         console.error("Erro ao excluir dia letivo:", error);
@@ -408,7 +517,6 @@ exports.editarPonto = async (req, res) => {
     let { entrada, saida } = req.body;
 
     try {
-        // Buscar o ponto com o id fornecido
         const ponto = await Ponto.findOne({ where: { id } });
         if (!ponto) {
             return res.status(404).json({ msg: "Ponto não encontrado" });
@@ -416,12 +524,10 @@ exports.editarPonto = async (req, res) => {
 
         const timezone = "America/Sao_Paulo";
 
-        // Atualizar a entrada, se fornecida
         if (entrada) {
             ponto.entrada = moment2.tz(entrada, ["DD-MM-YYYY HH:mm", "YYYY-MM-DD HH:mm"], timezone).toDate();
         }
 
-        // Atualizar a saída, se fornecida
         if (saida) {
             ponto.saida = moment2.tz(saida, ["DD-MM-YYYY HH:mm", "YYYY-MM-DD HH:mm"], timezone).toDate();
         }
@@ -429,7 +535,6 @@ exports.editarPonto = async (req, res) => {
         console.log("Entrada convertida:", ponto.entrada);
         console.log("Saída convertida:", ponto.saida);
 
-        // Salvar as mudanças no banco de dados
         await ponto.save();
         res.json({ msg: "Ponto atualizado com sucesso!" });
     } catch (error) {

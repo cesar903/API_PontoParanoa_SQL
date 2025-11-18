@@ -6,6 +6,8 @@ const Faltas = require("../../fouls/models/Faltas");
 const Mensagem = require("../../messages/models/Mensagem");
 const Calendario = require("../../calendar/models/Calendario");
 const Endereco = require("../../address/models/address");
+const ProfessorTipo = require("../../user/teacher/models/professor");
+const TurmaProfessor = require("../../user/teacher/models/turmaProfessor");
 
 
 User.hasMany(Ponto, {
@@ -72,17 +74,31 @@ Mensagem.belongsTo(User, {
 });
 
 
-User.hasMany(Turmas, {
-    foreignKey: "id_professor",
-    sourceKey: "pk_usuario",
-    as: "turmasMinistradas",
-});
-Turmas.belongsTo(User, {
-    foreignKey: "id_professor",
-    targetKey: "pk_usuario",
-    as: "professor",
+// User.hasMany(Turmas, {
+//     foreignKey: "id_professor",
+//     sourceKey: "pk_usuario",
+//     as: "turmasMinistradas",
+// });
+// Turmas.belongsTo(User, {
+//     foreignKey: "id_professor",
+//     targetKey: "pk_usuario",
+//     as: "professor",
+// });
+
+// --- RELAÇÃO N:M PROFESSOR <-> TURMAS (TurmaProfessor - CORRETA) ---
+User.belongsToMany(Turmas, {
+    through: TurmaProfessor,
+    foreignKey: 'id_professor',
+    otherKey: 'id_turma',
+    as: 'turmasMinistradas' // Nome alterado para evitar confusão de N:M
 });
 
+Turmas.belongsToMany(User, {
+    through: TurmaProfessor,
+    foreignKey: 'id_turma',
+    otherKey: 'id_professor',
+    as: 'professores'
+});
 
 User.belongsToMany(Turmas, {
     through: AlunoTurmas,
@@ -111,17 +127,26 @@ Calendario.belongsTo(Turmas, {
 });
 
 User.hasOne(Endereco, {
-  foreignKey: "pk_usuario",
-  sourceKey: "pk_usuario",
-  as: "endereco",
+    foreignKey: "pk_usuario",
+    sourceKey: "pk_usuario",
+    as: "endereco",
 });
 
 Endereco.belongsTo(User, {
-  foreignKey: "pk_usuario",
-  targetKey: "pk_usuario",
-  as: "usuario",
+    foreignKey: "pk_usuario",
+    targetKey: "pk_usuario",
+    as: "usuario",
 });
 
+ProfessorTipo.hasMany(User, {
+    foreignKey: "id_professor_tipo",
+    as: "professores"
+});
+
+User.belongsTo(ProfessorTipo, {
+    foreignKey: "id_professor_tipo",
+    as: "tipoProfessor"
+});
 
 module.exports = {
     User,
@@ -132,4 +157,6 @@ module.exports = {
     Mensagem,
     Calendario,
     Endereco,
+    ProfessorTipo,
+    TurmaProfessor
 };

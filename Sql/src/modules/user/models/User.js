@@ -34,10 +34,16 @@ const User = sequelize.define(
       type: DataTypes.ENUM("professor", "aluno", "admin"),
       allowNull: false,
     },
+
     id_professor_tipo: {
-      type: DataTypes.ENUM("tecnologia", "ginastica", "karate", "todos"),
-      allowNull: true,
+      type: DataTypes.INTEGER,
+      references: {
+        model: "tb_professor_tipo",
+        key: "pk_professor_tipo"
+      },
+      allowNull: true
     },
+
     ds_foto_3_4: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -62,7 +68,7 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: "usuarios", // SE sua tabela chama `usuarios`
+    tableName: "tb_usuarios",
     timestamps: false,
     underscored: true,
   }

@@ -23,7 +23,8 @@ const {
     finalizarPonto,
     enviarRelatorio,
     adicionarFaltaJustificada,
-    excluirFaltaJustificada
+    excluirFaltaJustificada,
+    listarTurmas
 
 } = require("../../teacher/controller/professorController");
 
@@ -58,7 +59,7 @@ router.get("/relatorio/:alunoId", authMiddleware, professorMiddleware, gerarRela
 router.post("/enviar-relatorio/:alunoId", authMiddleware, professorMiddleware, upload.single('relatorio'), enviarRelatorio);
 router.post("/falta-justificada/:alunoId", authMiddleware, professorMiddleware, adicionarFaltaJustificada);
 router.delete("/falta/:faltaId", authMiddleware, professorMiddleware, excluirFaltaJustificada);
-
+router.get("/turmas", authMiddleware, professorMiddleware, listarTurmas);
 
 
 module.exports = router;

@@ -1,46 +1,42 @@
-// models/Turmas.js
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../../../config/db");
+const { sequelize } = require("../../../../config/db");
 
-const Turmas = sequelize.define(
-  "Turmas",
+const ProfessorTipo = sequelize.define(
+  "ProfessorTipo",
   {
-    pk_turma: {
+    pk_professor_tipo: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
 
-    nm_turma: {
+    nm_professor_tipo: {
       type: DataTypes.STRING,
       allowNull: false,
     },
 
-    ds_turma: {
-      type: DataTypes.STRING,
+    ds_descricao: {
+      type: DataTypes.TEXT,
       allowNull: true,
-    },
-
-    fl_ativa: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
     },
 
     dt_criado_em: {
       type: DataTypes.DATE,
+      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
 
     dt_atualizado_em: {
       type: DataTypes.DATE,
+      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "tb_turmas",
+    tableName: "tb_professor_tipo",
     timestamps: false,
     underscored: true,
   }
 );
 
-module.exports = Turmas;
+module.exports = ProfessorTipo;

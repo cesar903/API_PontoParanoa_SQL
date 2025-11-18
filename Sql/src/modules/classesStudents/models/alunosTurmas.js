@@ -39,7 +39,7 @@ const AlunosTurmas = sequelize.define(
     },
   },
   {
-    tableName: "alunos_turmas",
+    tableName: "tb_usuario_turma",
     timestamps: false,
     underscored: true,
 

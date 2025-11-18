@@ -11,7 +11,6 @@ const Endereco = sequelize.define(
       autoIncrement: true,
     },
 
-    // Campos do endereço
     pk_logradouro: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -45,7 +44,6 @@ const Endereco = sequelize.define(
       allowNull: false,
     },
 
-    // FK PARA USUÁRIO
     pk_usuario: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -58,7 +56,7 @@ const Endereco = sequelize.define(
     },
   },
   {
-    tableName: "enderecos",
+    tableName: "tb_enderecos",
     timestamps: false,
     underscored: true,
   }

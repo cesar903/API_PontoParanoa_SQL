@@ -55,7 +55,7 @@ const Faltas = sequelize.define(
     },
   },
   {
-    tableName: "faltas",
+    tableName: "tb_faltas_justificadas",
     timestamps: false,
     underscored: true,
   }

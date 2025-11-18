@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import Loading from "../components/Loading";
@@ -6,125 +6,88 @@ import Loading from "../components/Loading";
 const Container = styled.div`
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  min-height: 100vh;
   background-color: #f8f9fa;
-  padding-bottom: 100px;
 `;
 
 const FormWrapper = styled.div`
   background: #fff;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  width: 350px;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  width: 90%;
+  margin-top: 40px;
+`;
+
+const Title = styled.h2`
+  margin-bottom: 24px;
+  font-size: 24px;
   text-align: center;
-  margin-top: 100px;
+  color: #212529;
+  font-weight: 600;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 12px;
-  margin: 8px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    outline: none;
+  }
+
+  & + & {
+    margin-top: 12px;
+  }
 `;
 
 const Select = styled.select`
   width: 100%;
   padding: 12px;
-  margin: 8px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
+  margin-top: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 15px;
   background: white;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    outline: none;
+  }
 `;
 
 const Button = styled.button`
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 20px;
   background-color: var(--DwYellow);
-  color: black;
+  color: #000;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background-color: var(--DwBoldGray);
-    color: white;
+    color: #fff;
   }
-`;
-
-const Title = styled.h2`
-  margin-bottom: 20px;
-  font-size: 22px;
-  color: #333;
 `;
 
 const Message = styled.p`
   font-size: 14px;
-  margin-top: 10px;
-  color: ${(props) => (props.error ? "red" : "green")};
-`;
-
-const RadioWrapper = styled.div`
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-top: 10px;
-`;
-
-const RadioLabel = styled.label`
-  position: relative;
-  padding-left: 28px;
-  cursor: pointer;
-  font-size: 14px;
-  user-select: none;
-  color: #333;
-
-  input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  /* círculo customizado */
-  span {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 18px;
-    width: 18px;
-    background-color: #fff;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-  }
-
-  /* círculo preenchido quando selecionado */
-  input:checked ~ span {
-    background-color: var(--DwYellow);
-    border-color: var(--DwYellow);
-  }
-
-  /* círculo interno */
-  span::after {
-    content: "";
-    position: absolute;
-    display: none;
-  }
-
-  input:checked ~ span::after {
-    display: block;
-    top: 4px;
-    left: 4px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: black;
-  }
+  margin-top: 12px;
+  text-align: center;
+  color: ${(props) => (props.error ? "#dc3545" : "#198754")};
 `;
 
 
@@ -134,19 +97,48 @@ function Register() {
   const [password, setPassword] = useState("");
   const [cpf, setCpf] = useState("");
   const [nasc, setNasc] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [turma, setTurma] = useState("manha");
+  const [endereco, setEndereco] = useState({
+    ds_logradouro: "",
+    ds_numero: "",
+    ds_complemento: "",
+    nm_bairro: "",
+    nm_cidade: "",
+    sg_estado: "",
+    nr_cep: "",
+  });
+
   const [role, setRole] = useState("aluno");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [karate, setKarate] = useState(false);
-  const [ginastica, setGinastica] = useState(false);
   const [professorTipo, setProfessorTipo] = useState(null);
+  const [descricaoProfessor, setDescricaoProfessor] = useState(null);
+  const [turmas, setTurmas] = useState([]);
+  const [turmasSelecionadas, setTurmasSelecionadas] = useState([]);
 
 
 
-  // Função para formatar o CPF
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "https://escolinha.paranoa.com.br/api/professores/turmas",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setTurmas(response.data);
+
+      } catch (error) {
+        console.error("Erro ao buscar turmas", error);
+      }
+    };
+
+    fetchTurmas();
+  }, []);
+
+
+
   const formatCpf = (value) => {
     value = value.replace(/\D/g, "");
     value = value.slice(0, 11);
@@ -170,14 +162,24 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const enviarKarate = turma === "karate" ? true : karate;
-    const ginasticaKarate = turma === "ginastica" ? true : ginastica;
 
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "https://escolinha.paranoa.com.br/api/professores/usuarios",
-        { nome: name, email, senha: password, nasc, cpf, endereco, turma, role, professorTipo, karate: enviarKarate, ginastica: ginasticaKarate },
+        {
+          nome: name,
+          email,
+          senha: password,
+          nasc,
+          cpf,
+          endereco,
+          role,
+          professorTipo: professorTipo
+            ? { nomeTipo: professorTipo, descricao: descricaoProfessor }
+            : null,
+          turmas: turmasSelecionadas
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -189,10 +191,19 @@ function Register() {
       setPassword("");
       setCpf("");
       setNasc("");
-      setEndereco("");
-      setTurma("manha");
       setRole("aluno");
-      setProfessorTipo("");
+      setProfessorTipo(null);
+      setDescricaoProfessor(null);
+      setEndereco({
+        ds_logradouro: "",
+        ds_numero: "",
+        ds_complemento: "",
+        nm_bairro: "",
+        nm_cidade: "",
+        sg_estado: "",
+        nr_cep: "",
+      });
+
     } catch (error) {
       setMessage(error.response?.data?.msg || "Erro ao cadastrar usuário");
       setIsError(true);
@@ -201,189 +212,202 @@ function Register() {
     }
   };
 
-  const handleRoleChange = (e) => {
-    const newRole = e.target.value;
-    setRole(newRole);
-
-    // Se mudar para professor, reseta o karate
-    if (newRole === "professor") {
-      setKarate(false);
-    }
-  };
-
-
   return (
     <Container>
       <Loading show={loading} />
       <FormWrapper>
         <Title>Cadastro</Title>
         <form onSubmit={handleRegister}>
-          <Input
-            type="text"
-            placeholder="Nome Completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <Input
-            type="email"
-            placeholder="E-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <Input
-            type="text"
-            placeholder="CPF"
-            value={cpf}
-            onChange={handleCpfChange}
-            maxLength="14"
-            required
-          />
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <Input
+                type="text"
+                placeholder="Nome Completo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
 
-          <Input
-            type="date"
-            placeholder="Data de Nascimento"
-            value={nasc}
-            onChange={(e) => setNasc(e.target.value)}
-            required
-          />
-          <Input
-            type="text"
-            placeholder="Endereço"
-            value={endereco}
-            onChange={(e) => setEndereco(e.target.value)}
-            required
-          />
+            <div className="col-md-6 mb-3">
+              <Input
+                type="email"
+                placeholder="E-mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
-          <Select value={role} onChange={handleRoleChange}>
-            <option value="professor">Professor</option>
-            <option value="aluno">Aluno</option>
-          </Select>
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <Input
+                type="password"
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
+            <div className="col-md-6 mb-3">
+              <Input
+                type="text"
+                placeholder="CPF"
+                value={cpf}
+                onChange={handleCpfChange}
+                maxLength="14"
+                required
+              />
+            </div>
+          </div>
 
-          {(role != "professor") && (
-            <Select value={turma} onChange={(e) => setTurma(e.target.value)}>
-              <option value="manha">Manhã</option>
-              <option value="tarde">Tarde</option>
-              <option value="karate">Karatê</option>
-              <option value="ginastica">Ginástica</option>
-            </Select>
+          {/* Data de nascimento */}
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <Input
+                type="date"
+                value={nasc}
+                onChange={(e) => setNasc(e.target.value)}
+                required
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <Input
+                type="text"
+                placeholder="Logradouro"
+                value={endereco.ds_logradouro}
+                onChange={(e) => setEndereco({ ...endereco, ds_logradouro: e.target.value })}
+              />
+            </div>
+
+            <div className="col-md-2 mb-3">
+              <Input
+                type="number"
+                placeholder="Número"
+                value={endereco.ds_numero}
+                onChange={(e) => setEndereco({ ...endereco, ds_numero: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <Input
+                type="text"
+                placeholder="Complemento"
+                value={endereco.ds_complemento}
+                onChange={(e) => setEndereco({ ...endereco, ds_complemento: e.target.value })}
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <Input
+                type="text"
+                placeholder="Bairro"
+                value={endereco.nm_bairro}
+                onChange={(e) => setEndereco({ ...endereco, nm_bairro: e.target.value })}
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <Input
+                type="text"
+                placeholder="Cidade"
+                value={endereco.nm_cidade}
+                onChange={(e) => setEndereco({ ...endereco, nm_cidade: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <Input
+                type="text"
+                placeholder="UF"
+                maxLength={2}
+                value={endereco.sg_estado}
+                onChange={(e) =>
+                  setEndereco({ ...endereco, sg_estado: e.target.value.toUpperCase() })
+                }
+              />
+            </div>
+
+            <div className="col-md-8 mb-3">
+              <Input
+                type="text"
+                placeholder="CEP"
+                value={endereco.nr_cep}
+                onChange={(e) => setEndereco({ ...endereco, nr_cep: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="row">
+            <div className="col-md-3 mb-3">
+              <Select value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="professor">Professor</option>
+                <option value="aluno">Aluno</option>
+              </Select>
+            </div>
+
+            <div className="col-8">
+              <p>Selecione as turmas:</p>
+
+              {turmas.map((t) => (
+                <label
+                  key={t.pk_turma}
+                  className="d-block text-left"
+                  style={{ marginTop: "8px" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={turmasSelecionadas.includes(t.pk_turma)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setTurmasSelecionadas([...turmasSelecionadas, t.pk_turma]);
+                      } else {
+                        setTurmasSelecionadas(
+                          turmasSelecionadas.filter((id) => id !== t.pk_turma)
+                        );
+                      }
+                    }}
+                  />
+                  <span className="ml-2">{t.nm_turma}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Campos extras para professor */}
+          {role === "professor" && (
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <Input
+                  type="text"
+                  placeholder="Área de domínio"
+                  value={professorTipo}
+                  onChange={(e) => setProfessorTipo(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="col-md-6 mb-3">
+                <Input
+                  type="text"
+                  placeholder="Descrição do professor"
+                  value={descricaoProfessor}
+                  onChange={(e) => setDescricaoProfessor(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
           )}
-
-          {((turma === "manha" || turma === "tarde") && role !== "professor") && (
-            <>
-              Optou pelo Karatê?
-              <RadioWrapper>
-
-                <RadioLabel>
-                  Sim
-                  <input type="radio" name="karate" value="sim" onChange={() => setKarate(true)} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Não
-                  <input type="radio" name="karate" value="nao" onChange={() => setKarate(false)} defaultChecked />
-                  <span></span>
-                </RadioLabel>
-              </RadioWrapper>
-
-              Optou pelo Ginástica??
-              <RadioWrapper>
-
-                <RadioLabel>
-                  Sim
-                  <input type="radio" name="ginastica" value="sim" onChange={() => setGinastica(true)} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Não
-                  <input type="radio" name="ginastica" value="nao" onChange={() => setGinastica(false)} defaultChecked />
-                  <span></span>
-                </RadioLabel>
-              </RadioWrapper>
-            </>
-          )}
-
-          {(turma == "ginastica") && (
-            <>
-              Optou pelo Karatê?
-              <RadioWrapper>
-
-                <RadioLabel>
-                  Sim
-                  <input type="radio" name="karate" value="sim" onChange={() => setKarate(true)} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Não
-                  <input type="radio" name="karate" value="nao" onChange={() => setKarate(false)} defaultChecked />
-                  <span></span>
-                </RadioLabel>
-              </RadioWrapper>
-            </>
-          )}
-
-          {(turma == "karate") && (
-            <>
-              Optou pelo Ginástica?
-              <RadioWrapper>
-
-                <RadioLabel>
-                  Sim
-                  <input type="radio" name="karate" value="sim" onChange={() => setGinastica(true)} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Não
-                  <input type="radio" name="karate" value="nao" onChange={() => setGinastica(false)} defaultChecked />
-                  <span></span>
-                </RadioLabel>
-              </RadioWrapper>
-            </>
-          )}
-
-          {((role == "professor") && (
-            <>
-              Professor do(a):
-              <RadioWrapper>
-
-                <RadioLabel>
-                  Escola Digital
-                  <input type="radio" name="professorTipo" value="tecnologia" onChange={() => setProfessorTipo("tecnologia")} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Karatê
-                  <input type="radio" name="professorTipo" value="karate" onChange={() => setProfessorTipo("karate")} />
-                  <span></span>
-                </RadioLabel>
-
-                <RadioLabel>
-                  Ginastica
-                  <input type="radio" name="professorTipo" value="ginastica" onChange={() => setProfessorTipo("ginastica")} />
-                  <span></span>
-                </RadioLabel>
-
-              </RadioWrapper>
-            </>
-          ))}
-
 
           <Button type="submit">Cadastrar</Button>
         </form>
+
         {message && <Message error={isError}>{message}</Message>}
       </FormWrapper>
     </Container>

@@ -85,7 +85,7 @@ const Ponto = sequelize.define(
     },
   },
   {
-    tableName: "pontos",
+    tableName: "tb_ponto",
     timestamps: false,
     underscored: true,
   }

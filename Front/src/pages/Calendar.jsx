@@ -246,7 +246,7 @@ const Calendario = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const turmasRecebidas = response.data; // ✅ declarada corretamente
+        const turmasRecebidas = response.data;
         setTurmas(turmasRecebidas);
 
         if (turmasRecebidas.length > 0) {
@@ -287,13 +287,15 @@ const Calendario = () => {
           }
         }
 
+        console.log("Dados Recebidos qo atualizar calendario: ", response.data)
+
         return {
-          id: dia.id || dia.pk_calendario,
-          data: dataFormatada,
+          id: dia.id ?? dia.pk_calendario ?? dia.pk ?? null,
+          data: dia.data ?? dia.dt_aula ?? dia.dt_data ?? null,
           temAula: dia.temAula ?? dia.fl_tem_aula ?? false,
           aviso: dia.aviso && dia.aviso.trim() !== "" ? dia.aviso : null,
-          id_turma: dia.turma_id || dia.id_turma,
-        };
+          id_turma: dia.id_turma ?? dia.turma_id ?? null,
+        }
       });
 
       setDatas(datasFormatadas);
@@ -347,22 +349,12 @@ const Calendario = () => {
 
 
   const toggleDayStatus = async () => {
-    if (role !== "professor") {
-      return;
-    }
-
-    if (!selectedDay) {
-      console.warn("Nenhum dia selecionado para alternar o status.");
-      return;
-    }
+    if (role !== "professor") return;
+    if (!selectedDay) return;
 
     const dateString = selectedDay.toISOString().split("T")[0];
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      console.error("Usuário não autenticado.");
-      return;
-    }
+    if (!token) return;
 
     const diaExistente = datas.find((dia) => dia.data === dateString);
     const temAula = diaExistente ? !diaExistente.temAula : true;
@@ -375,30 +367,41 @@ const Calendario = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        setDatas((prevDatas) =>
-
-          prevDatas.map((dia) =>
-            dia.data === dateString ? { ...dia, temAula } : dia
+        setDatas((prev) =>
+          prev.map((dia) =>
+            dia.data === dateString
+              ? { ...dia, temAula }
+              : dia
           )
         );
-      } else {
-        const response = await axios.post(
-          "https://escolinha.paranoa.com.br/api/professores/calendario",
-          { data: dateString, temAula, turma_id: turmaSelecionada },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
 
-        setDatas((prevDatas) => [
-          ...prevDatas,
-          { id: response.data.id, data: dateString, temAula },
-        ]);
+        return;
       }
-      setReload((prev) => !prev);
+
+      const response = await axios.post(
+        "https://escolinha.paranoa.com.br/api/professores/calendario",
+        { data: dateString, temAula, turma_id: turmaSelecionada },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const novo = response.data; // <- agora é correto
+
+      setDatas((prevDatas) => [
+        ...prevDatas,
+        {
+          id: novo.pk_calendario,
+          data: novo.dt_aula,
+          temAula: novo.fl_tem_aula,
+          aviso: novo.aviso ?? null
+        }
+      ]);
+
     } catch (error) {
-      console.error("Erro ao atualizar dia letivo", error);
-      alert("Erro ao atualizar o dia letivo. Verifique o console para mais detalhes.");
+      console.error("Erro ao atualizar dia letivo:", error);
+      alert("Erro ao atualizar o dia letivo.");
     }
   };
+
 
 
   const tileClassName = ({ date }) => {
