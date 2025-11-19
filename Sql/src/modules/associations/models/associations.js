@@ -73,19 +73,6 @@ Mensagem.belongsTo(User, {
     as: "destinatario",
 });
 
-
-// User.hasMany(Turmas, {
-//     foreignKey: "id_professor",
-//     sourceKey: "pk_usuario",
-//     as: "turmasMinistradas",
-// });
-// Turmas.belongsTo(User, {
-//     foreignKey: "id_professor",
-//     targetKey: "pk_usuario",
-//     as: "professor",
-// });
-
-// --- RELAÇÃO N:M PROFESSOR <-> TURMAS (TurmaProfessor - CORRETA) ---
 User.belongsToMany(Turmas, {
     through: TurmaProfessor,
     foreignKey: 'id_professor',
@@ -126,15 +113,25 @@ Calendario.belongsTo(Turmas, {
     as: "turma",
 });
 
+// User.hasOne(Endereco, {
+//     foreignKey: "pk_usuario",
+//     sourceKey: "pk_usuario",
+//     as: "endereco",
+// });
+
+// Endereco.belongsTo(User, {
+//     foreignKey: "pk_usuario",
+//     targetKey: "pk_usuario",
+//     as: "usuario",
+// });
+
 User.hasOne(Endereco, {
-    foreignKey: "pk_usuario",
-    sourceKey: "pk_usuario",
+    foreignKey: "id_usuario",
     as: "endereco",
 });
 
 Endereco.belongsTo(User, {
-    foreignKey: "pk_usuario",
-    targetKey: "pk_usuario",
+    foreignKey: "id_usuario",
     as: "usuario",
 });
 

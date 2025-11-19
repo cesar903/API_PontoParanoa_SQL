@@ -3,6 +3,7 @@ import styled from "styled-components";
 import axios from "axios";
 import InfoPointsStudants from "./InfoPointsStudants";
 import Loading from "./Loading";
+import { GoAlert } from "react-icons/go";
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -27,6 +28,7 @@ const ModalContent = styled.div`
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
   text-align: center;
   position: relative;
+  margin: 5px 15px;
 `;
 
 const CloseButton = styled.button`
@@ -111,40 +113,62 @@ const ButtonConfirm = styled.button`
   }
 `
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
-`;
-
-const Label = styled.label`
-  display: flex;
-  flex-direction: column;
-  font-weight: bold;
-  text-align: left;
-  color: #333;
-`;
-
 const Input = styled.input`
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 14px;
   margin-top: 5px;
+  width: 100%;
 `;
 
-const Select = styled.select`
-  order: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-  padding: 10px;
-  margin-top: 5px;
-  margin-left: 5px;
+const ModalDelete = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+// Caixa do modal
+const ModalBox = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: center;
+`;
+
+// Botões
+const ButtonConfirmDelete = styled.button`
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  background-color: red;
+`;
+
+const ButtonCancelDelete = styled.button`
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  background-color: var(--DwMediumGray);
 `;
 
 
-const WholeClass = ({ isOpen, onClose, turma }) => {
+const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
     const [alunos, setAlunos] = useState([]);
     const [error, setError] = useState(null);
     const [confirmation, setConfirmation] = useState({ open: false, alunoNome: "", alunoId: "" });
@@ -152,6 +176,7 @@ const WholeClass = ({ isOpen, onClose, turma }) => {
     const [selectedInfoAluno, setSelectedInfoAluno] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [turmaSelecionada, setTurmaSelecionada] = useState("null");
+    const [turmas, setTurmas] = useState([]);
     const [loading, setLoading] = useState(false);
 
 
@@ -163,82 +188,129 @@ const WholeClass = ({ isOpen, onClose, turma }) => {
 
 
 
-
     const handleInfo = (aluno) => {
         setSelectedInfoAluno(aluno);
     };
 
     useEffect(() => {
-        const fetchAlunos = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
-                setAlunos(
-                    response.data.map(a => ({
-                        id: a.pk_usuario,
-                        nome: a.nm_usuario,
-                        email: a.ds_email,
-                        cpf: a.nr_cpf,
-                        nascimento: a.dt_nascimento,
-                        turmas: a.turmas ?? []
-                    }))
-                );
-
-            } catch (error) {
-                console.error("Erro ao carregar alunos", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAlunos();
+        fetchTurmas();
     }, []);
+
+
+    const fetchAlunos = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            setAlunos(
+                response.data.map(a => ({
+                    id: a.pk_usuario,
+                    nome: a.nm_usuario,
+                    email: a.ds_email,
+                    cpf: a.nr_cpf,
+                    nascimento: a.dt_nascimento,
+                    turmas: a.turmas ?? []
+                }))
+            );
+
+        } catch (error) {
+            console.error("Erro ao carregar alunos", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    const fetchTurmas = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(
+                "https://escolinha.paranoa.com.br/api/professores/turmas",
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setTurmas(response.data);
+
+        } catch (error) {
+            console.error("Erro ao buscar turmas", error);
+        }
+    };
 
     const handleDelete = (id, nome) => {
         setConfirmation({ open: true, alunoNome: nome, alunoId: id });
     };
 
     const confirmDelete = () => {
-        const nomeDigitado = prompt(`Digite o nome de ${confirmation.alunoNome} para confirmar a exclusão:`);
-        if (nomeDigitado === confirmation.alunoNome) {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Você não está autenticado.");
-                return;
-            }
 
-            axios.delete(`https://escolinha.paranoa.com.br/api/professores/alunos/${confirmation.alunoId}`, {
-                headers: { Authorization: `Bearer ${token}` },
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Você não está autenticado.");
+            return;
+        }
+
+        axios.delete(`https://escolinha.paranoa.com.br/api/professores/alunos/${confirmation.alunoId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(() => {
+                setAlunos((prevAlunos) => prevAlunos.filter((aluno) => aluno.id !== confirmation.alunoId));
+                setConfirmation({ open: false, alunoNome: "", alunoId: "" });
+                if (onUpdateAlunos) onUpdateAlunos();
             })
-                .then(() => {
-                    setAlunos((prevAlunos) => prevAlunos.filter((aluno) => aluno.id !== confirmation.alunoId));
-                    setConfirmation({ open: false, alunoNome: "", alunoId: "" });
-                })
-                .catch((error) => {
-                    alert("Erro ao excluir aluno.");
-                    console.error(error);
-                });
-        } else {
-            alert("O nome digitado não corresponde ao nome do aluno.");
+            .catch((error) => {
+                alert("Erro ao excluir aluno.");
+                console.error(error);
+            });
+
+
+        if (onUpdateAlunos) onUpdateAlunos();
+    };
+
+    const handleEdit = async (aluno) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            const response = await axios.get(
+                `https://escolinha.paranoa.com.br/api/professores/alunos/${aluno.id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const data = response.data;
+
+            setSelectedAluno({
+                id: data.pk_usuario,
+                nome: data.nm_usuario,
+                email: data.ds_email,
+                cpf: data.nr_cpf,
+                nasc: data.dt_nascimento?.split("T")[0] || "",
+
+                role: data.role,
+                professorTipo: data.professor_tipo || "",
+                descricaoProfessor: data.descricao_professor || "",
+
+                endereco: data.endereco || {
+                    ds_logradouro: "",
+                    ds_numero: "",
+                    ds_complemento: "",
+                    nm_bairro: "",
+                    nm_cidade: "",
+                    sg_estado: "",
+                    nr_cep: ""
+                },
+
+                turmasSelecionadas: data.turmas?.map(t => t.pk_turma) || []
+            });
+
+        } catch (error) {
+            console.error("Erro ao buscar aluno completo", error);
         }
     };
 
-    const handleEdit = (aluno) => {
-        const dataFormatada = aluno.nasc
-            ? new Date(aluno.nasc).toISOString().split('T')[0]
-            : '';
 
-        setSelectedAluno({
-            ...aluno,
-            nasc: dataFormatada,
-            karate: Boolean(aluno.karate),
-            ginastica: Boolean(aluno.ginastica)
-        });
-    };
+
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -250,16 +322,21 @@ const WholeClass = ({ isOpen, onClose, turma }) => {
         }
         setLoading(true);
 
-        const alunoParaSalvar = {
-            ...selectedAluno,
-            karate: selectedAluno.turma === "karate" ? true : selectedAluno.karate,
-            ginastica: selectedAluno.turma === "ginastica" ? true : selectedAluno.ginastica
+        const payload = {
+            nome: selectedAluno.nome,
+            email: selectedAluno.email,
+            nasc: selectedAluno.nasc,
+            role: selectedAluno.role,
+            professorTipo: selectedAluno.professorTipo,
+            descricaoProfessor: selectedAluno.descricaoProfessor,
+            endereco: selectedAluno.endereco,
+            turmas: selectedAluno.turmasSelecionadas
         };
 
 
 
         try {
-            await axios.put(`https://escolinha.paranoa.com.br/api/professores/alunos/${selectedAluno.id}`, alunoParaSalvar, {
+            await axios.put(`https://escolinha.paranoa.com.br/api/professores/alunos/${selectedAluno.id}`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -339,135 +416,214 @@ const WholeClass = ({ isOpen, onClose, turma }) => {
                 {selectedAluno && (
                     <ModalOverlay onClick={() => setSelectedAluno(null)}>
                         <ModalContent onClick={(e) => e.stopPropagation()}>
-                            <h2>Editar Aluno</h2>
+                            <h2>Editar Usuário</h2>
                             <CloseButton onClick={() => setSelectedAluno(null)}>X</CloseButton>
 
-                            <Form onSubmit={handleSave}>
-                                <Label>
-                                    Nome:
-                                    <Input
-                                        type="text"
-                                        value={selectedAluno.nome}
-                                        onChange={(e) => setSelectedAluno({ ...selectedAluno, nome: e.target.value })}
-                                    />
-                                </Label>
+                            <form onSubmit={handleSave}>
+                                <div className="row">
+                                    <div className="col-md-6 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="Nome Completo"
+                                            value={selectedAluno.nome}
+                                            onChange={(e) => setSelectedAluno({ ...selectedAluno, nome: e.target.value })}
+                                            required
+                                        />
+                                    </div>
 
-                                <Label>
-                                    Email:
-                                    <Input
-                                        type="email"
-                                        value={selectedAluno.email}
-                                        onChange={(e) => setSelectedAluno({ ...selectedAluno, email: e.target.value })}
-                                    />
-                                </Label>
+                                    <div className="col-md-6 mb-3">
+                                        <Input
+                                            type="email"
+                                            placeholder="E-mail"
+                                            value={selectedAluno.email}
+                                            onChange={(e) => setSelectedAluno({ ...selectedAluno, email: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                                <Label>
-                                    CPF:
-                                    <Input
-                                        type="text"
-                                        value={selectedAluno.cpf}
-                                        disabled
-                                    />
-                                </Label>
+                                <div className="row">
+                                    <div className="col-md-6 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="CPF"
+                                            value={selectedAluno.cpf}
+                                            disabled
+                                        />
+                                    </div>
 
-                                <Label>
-                                    Nascimento:
-                                    <Input
-                                        type="date"
-                                        value={selectedAluno.nasc || ''}
-                                        onChange={(e) => setSelectedAluno({ ...selectedAluno, nasc: e.target.value })}
-                                    />
-                                </Label>
+                                    <div className="col-md-6 mb-3">
+                                        <Input
+                                            type="date"
+                                            value={selectedAluno.nasc}
+                                            onChange={(e) => setSelectedAluno({ ...selectedAluno, nasc: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                                <Label>
-                                    Endereço:
-                                    <Input
-                                        type="text"
-                                        value={selectedAluno.endereco}
-                                        onChange={(e) => setSelectedAluno({ ...selectedAluno, endereco: e.target.value })}
-                                    />
-                                </Label>
+                                {/* Endereço */}
+                                <div className="row">
+                                    <div className="col-md-6 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="Logradouro"
+                                            value={selectedAluno.endereco.ds_logradouro}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, ds_logradouro: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
 
-                                <Label>
-                                    Turma:
-                                    <Select
-                                        value={selectedAluno.turma}
-                                        onChange={(e) => setSelectedAluno({ ...selectedAluno, turma: e.target.value })}
-                                    >
-                                        <option value="manha">Manhã</option>
-                                        <option value="tarde">Tarde</option>
-                                        <option value="karate">Karatê</option>
-                                        <option value="ginastica">Ginástica</option>
-                                    </Select>
-                                </Label>
+                                    <div className="col-md-2 mb-3">
+                                        <Input
+                                            type="number"
+                                            placeholder="Número"
+                                            value={selectedAluno.endereco.ds_numero}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, ds_numero: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
 
-                                {/* Radio de Karate */}
-                                {selectedAluno.turma !== "karate" && (
-                                    <Label>
-                                        Optou por Karate?
-                                        <div style={{ display: "flex", gap: "20px", marginTop: "5px" }}>
-                                            <label>
-                                                Sim
+                                    <div className="col-md-4 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="Complemento"
+                                            value={selectedAluno.endereco.ds_complemento}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, ds_complemento: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="row">
+                                    <div className="col-md-4 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="Bairro"
+                                            value={selectedAluno.endereco.nm_bairro}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, nm_bairro: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="col-md-4 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="Cidade"
+                                            value={selectedAluno.endereco.nm_cidade}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, nm_cidade: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="col-md-4 mb-3">
+                                        <Input
+                                            type="text"
+                                            maxLength={2}
+                                            placeholder="UF"
+                                            value={selectedAluno.endereco.sg_estado}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, sg_estado: e.target.value.toUpperCase() }
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="row">
+                                    <div className="col-md-4 mb-3">
+                                        <Input
+                                            type="text"
+                                            placeholder="CEP"
+                                            value={selectedAluno.endereco.nr_cep}
+                                            onChange={(e) =>
+                                                setSelectedAluno({
+                                                    ...selectedAluno,
+                                                    endereco: { ...selectedAluno.endereco, nr_cep: e.target.value }
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="row">
+                                    <div className="col-md-12">
+                                        <p>Turmas:</p>
+
+                                        {turmas.map((t) => (
+                                            <label key={t.pk_turma} className="d-block">
                                                 <input
-                                                    type="radio"
-                                                    name="karate"
-                                                    value="sim"
-                                                    checked={selectedAluno.karate === true}
-                                                    onChange={() => setSelectedAluno({ ...selectedAluno, karate: true })}
+                                                    type="checkbox"
+                                                    checked={selectedAluno.turmasSelecionadas.includes(t.pk_turma)}
+                                                    onChange={(e) => {
+                                                        const checked = e.target.checked;
+                                                        const id = t.pk_turma;
+
+                                                        setSelectedAluno({
+                                                            ...selectedAluno,
+                                                            turmasSelecionadas: checked
+                                                                ? [...selectedAluno.turmasSelecionadas, id]
+                                                                : selectedAluno.turmasSelecionadas.filter((x) => x !== id)
+                                                        });
+                                                    }}
                                                 />
+                                                {t.nm_turma}
                                             </label>
-                                            <label>
-                                                Não
-                                                <input
-                                                    type="radio"
-                                                    name="karate"
-                                                    value="nao"
-                                                    checked={selectedAluno.karate === false}
-                                                    onChange={() => setSelectedAluno({ ...selectedAluno, karate: false })}
-                                                />
-                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {selectedAluno.role === "professor" && (
+                                    <div className="row">
+                                        <div className="col-md-6 mb-3">
+                                            <Input
+                                                type="text"
+                                                placeholder="Área de domínio"
+                                                value={selectedAluno.professorTipo}
+                                                onChange={(e) =>
+                                                    setSelectedAluno({ ...selectedAluno, professorTipo: e.target.value })
+                                                }
+                                            />
                                         </div>
-                                    </Label>
-                                )}
 
-                                {selectedAluno.turma !== "ginastica" && (
-                                    <Label>
-                                        Optou por Ginástica?
-                                        <div style={{ display: "flex", gap: "20px", marginTop: "5px" }}>
-                                            <label>
-                                                Sim
-                                                <input
-                                                    type="radio"
-                                                    name="ginastica"
-                                                    value="sim"
-                                                    checked={selectedAluno.ginastica === true}
-                                                    onChange={() => setSelectedAluno({ ...selectedAluno, ginastica: true })}
-                                                />
-                                            </label>
-                                            <label>
-                                                Não
-                                                <input
-                                                    type="radio"
-                                                    name="ginastica"
-                                                    value="nao"
-                                                    checked={selectedAluno.ginastica === false}
-                                                    onChange={() => setSelectedAluno({ ...selectedAluno, ginastica: false })}
-                                                />
-                                            </label>
+                                        <div className="col-md-6 mb-3">
+                                            <Input
+                                                type="text"
+                                                placeholder="Descrição do professor"
+                                                value={selectedAluno.descricaoProfessor}
+                                                onChange={(e) =>
+                                                    setSelectedAluno({ ...selectedAluno, descricaoProfessor: e.target.value })
+                                                }
+                                            />
                                         </div>
-                                    </Label>
-                                )}
-
-                                {selectedAluno.turma === "ginastica" && (
-                                    <p>Aluno matriculado na Ginastica ✅</p>
-                                )}
-
-                                {selectedAluno.turma === "karate" && (
-                                    <p>Aluno matriculado no Karate ✅</p>
+                                    </div>
                                 )}
 
                                 <ButtonConfirm type="submit">Salvar</ButtonConfirm>
-                            </Form>
+                            </form>
+
 
                         </ModalContent>
                     </ModalOverlay>
@@ -476,11 +632,18 @@ const WholeClass = ({ isOpen, onClose, turma }) => {
 
 
                 {confirmation.open && (
-                    <div>
-                        <Danger>Você está prestes a excluir o aluno {confirmation.alunoNome} para sempre. Para confirmar, digite o nome completo do aluno.</Danger>
-                        <ButtonConfirm onClick={confirmDelete}>Confirmar</ButtonConfirm>
-                        <ButtonConfirm onClick={() => setConfirmation({ open: false, alunoNome: "", alunoId: "" })}>Cancelar</ButtonConfirm>
-                    </div>
+                    <ModalDelete>
+                        <ModalBox>
+                            <GoAlert size={48} color="red" />
+                            <Danger>
+                                Você está prestes a excluir o aluno {confirmation.alunoNome} para sempre.
+                            </Danger>
+                            <ButtonConfirmDelete onClick={confirmDelete}>Confirmar</ButtonConfirmDelete>
+                            <ButtonCancelDelete onClick={() => setConfirmation({ open: false, alunoNome: "", alunoId: "" })}>
+                                Cancelar
+                            </ButtonCancelDelete>
+                        </ModalBox>
+                    </ModalDelete>
                 )}
 
                 {selectedInfoAluno && (

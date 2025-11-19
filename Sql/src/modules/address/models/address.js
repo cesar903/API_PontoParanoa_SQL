@@ -44,7 +44,7 @@ const Endereco = sequelize.define(
       allowNull: false,
     },
 
-    pk_usuario: {
+    id_usuario: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -61,8 +61,5 @@ const Endereco = sequelize.define(
     underscored: true,
   }
 );
-
-User.hasOne(Endereco, { foreignKey: "pk_usuario" });
-Endereco.belongsTo(User, { foreignKey: "pk_usuario" });
 
 module.exports = Endereco;

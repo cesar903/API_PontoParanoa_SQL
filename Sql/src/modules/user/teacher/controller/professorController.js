@@ -108,7 +108,7 @@ exports.cadastrarUsuario = async (req, res) => {
             nm_cidade: endereco.nm_cidade,
             sg_estado: endereco.sg_estado,
             nr_cep: endereco.nr_cep,
-            pk_usuario: novoUsuario.pk_usuario,
+            id_usuario: novoUsuario.pk_usuario,
         }, { transaction: t });
 
         if (role === "professor") {
@@ -245,7 +245,7 @@ exports.listarAlunos = async (req, res) => {
                     model: Turmas,
                     as: "turmas",
                     attributes: ["pk_turma", "nm_turma", "fl_ativa"],
-                    through: { attributes: [] }, 
+                    through: { attributes: [] },
                 }
             ],
             attributes: [
@@ -585,19 +585,18 @@ exports.excluirAluno = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Buscar o aluno pelo id
-        const aluno = await User.findOne({ where: { id } });
+        const aluno = await User.findOne({ where: { pk_usuario: id } });
         if (!aluno) {
             return res.status(404).json({ msg: "Usuário não encontrado." });
         }
 
-        // Verificar se o usuário não é um aluno
-        if (aluno.role !== "aluno") {
+        if (aluno.tp_usuario !== "aluno") {
             return res.status(403).json({ msg: "Apenas alunos podem ser excluídos." });
         }
 
-        // Excluir o aluno
-        await User.destroy({ where: { id } });
+        await aluno.setTurmas([]);
+
+        await User.destroy({ where: { pk_usuario: id } });
 
         res.status(200).json({ msg: "Aluno excluído com sucesso." });
     } catch (error) {
@@ -609,34 +608,112 @@ exports.excluirAluno = async (req, res) => {
 
 exports.atualizarAluno = async (req, res) => {
     const { id } = req.params;
-    const { nome, email, nasc, cpf, endereco, turma, karate, ginastica } = req.body;
+    const { nome,
+        email,
+        senha,
+        nasc,
+        cpf,
+        endereco,
+        role,
+        professorTipo,
+        turmas } = req.body;
+    const t = await sequelize.transaction();
+
+    const aluno = await User.findOne({ where: { pk_usuario } });
+    if (!aluno) {
+        return res.status(404).json({ msg: "Aluno não encontrado" });
+    }
 
     try {
-        // Buscar o aluno pelo id
-        const aluno = await User.findOne({ where: { id } });
-        if (!aluno) {
-            return res.status(404).json({ msg: "Aluno não encontrado" });
+        const senhaHash = await bcrypt.hash(senha, 10);
+
+        const updateUsuario = await User.put({
+            nm_usuario: nome,
+            ds_email: email,
+            ds_senha_hash: senhaHash,
+            nr_cpf: cpf,
+            dt_nascimento: nasc,
+            tp_usuario: role,
+            id_professor_tipo: professorTipo,
+            ds_foto_3_4: null,
+            dt_atualizado_em: new Date(),
+        }, { transaction: t });
+
+
+        await Endereco.put({
+            pk_logradouro: endereco.pk_logradouro || null,
+            ds_logradouro: endereco.ds_logradouro,
+            ds_numero: endereco.ds_numero,
+            ds_complemento: endereco.ds_complemento,
+            nm_bairro: endereco.nm_bairro,
+            nm_cidade: endereco.nm_cidade,
+            sg_estado: endereco.sg_estado,
+            nr_cep: endereco.nr_cep,
+            pk_usuario: novoUsuario.pk_usuario,
+        }, { transaction: t })
+
+        if (role === "aluno" || (role !== "professor" && turmas && turmas.length > 0)) {
+            const associacoesAlunoTurma = turmas.map(turmaId => ({
+                id_aluno: updateUsuario.pk_usuario,
+                id_turma: turmaId,
+                dt_criado_em: new Date(),
+            }));
+            await AlunosTurmas.bulkCreate(associacoesAlunoTurma, { transaction: t });
         }
 
-        // Atualizar os campos que foram enviados
-        if (nome) aluno.nome = nome;
-        if (email) aluno.email = email;
-        if (nasc) aluno.nasc = nasc;
-        if (cpf) aluno.cpf = cpf;
-        if (endereco) aluno.endereco = endereco;
-        if (turma) aluno.turma = turma;
-        if (karate !== undefined) aluno.karate = karate;
-        if (ginastica !== undefined) aluno.ginastica = ginastica;
-
-
-        // Salvar as alterações
-        await aluno.save();
         res.json({ msg: "Aluno atualizado com sucesso!", aluno });
     } catch (error) {
         console.error("Erro ao atualizar aluno:", error);
         res.status(500).json({ msg: "Erro ao atualizar aluno" });
     }
 };
+
+
+exports.usuarioCompleto = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const usuario = await User.findOne({
+            where: { pk_usuario: id },
+            attributes: [
+                "pk_usuario",
+                "nm_usuario",
+                "ds_email",
+                "nr_cpf",
+                "dt_nascimento",
+                "tp_usuario"
+            ],
+            include: [
+                {
+                    model: Endereco,
+                    as: "endereco",
+                },
+                {
+                    model: Turmas,
+                    as: "turmas",
+                    through: { attributes: [] }
+                },
+                {
+                    model: ProfessorTipo,
+                    as: "tipoProfessor",
+                }
+            ]
+        });
+
+        if (!usuario) {
+            return res.status(404).json({ msg: "Usuário não encontrado" });
+        }
+
+        res.json(usuario);
+
+    } catch (error) {
+        console.error("Erro usuarioCompleto:", error);
+        res.status(500).json({ msg: "Erro ao buscar usuário", error });
+    }
+};
+
+
+
 
 
 exports.contarFaltas = async (req, res) => {
@@ -701,7 +778,7 @@ exports.contarFaltas = async (req, res) => {
 };
 
 exports.excluirPonto = async (req, res) => {
-    const { id } = req.params; 
+    const { id } = req.params;
 
     try {
         const ponto = await Ponto.findByPk(id);

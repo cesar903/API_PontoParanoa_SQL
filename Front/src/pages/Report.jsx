@@ -159,36 +159,35 @@ function Report() {
     const [faltasJustificadas, setFaltasJustificadas] = useState([]);
     const [turmas, setTurmas] = useState([]);
     const [role, setRole] = useState(null);
-    
 
+
+    const fetchAlunos = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            setAlunos(
+                response.data.map(a => ({
+                    id: a.pk_usuario,
+                    nome: a.nm_usuario,
+                    email: a.ds_email,
+                    cpf: a.nr_cpf,
+                    nascimento: a.dt_nascimento,
+                    turmas: a.turmas ?? []
+                }))
+            );
+
+        } catch (error) {
+            console.error("Erro ao carregar alunos", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchAlunos = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
-                setAlunos(
-                    response.data.map(a => ({
-                        id: a.pk_usuario,
-                        nome: a.nm_usuario,
-                        email: a.ds_email,
-                        cpf: a.nr_cpf,
-                        nascimento: a.dt_nascimento,
-                        turmas: a.turmas ?? []
-                    }))
-                );
-
-            } catch (error) {
-                console.error("Erro ao carregar alunos", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAlunos();
     }, []);
 
@@ -408,7 +407,12 @@ function Report() {
                         </FloatingButton>
                     </ButtonGroup>
 
-                    <WholeClass isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} turma={turmas.find(t => String(t.id) === String(turmaSelecionada))}/>
+                    <WholeClass
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        turma={turmas.find(t => String(t.id) === String(turmaSelecionada))}
+                        onUpdateAlunos={fetchAlunos}
+                    />
                     <Lack isOpen={isLackModalOpen} onClose={() => setIsLackModalOpen(false)} />
 
 
