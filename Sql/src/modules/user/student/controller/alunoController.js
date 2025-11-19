@@ -40,20 +40,17 @@ exports.fazerCheckin = async (req, res) => {
             return res.status(400).json({ msg: "Você deve selecionar uma turma." });
         }
 
-        const agora = new Date();
+        const timezone = "America/Sao_Paulo"; // ← FALTAVA ISSO
 
-        const hoje = new Date().toISOString().split("T")[0];
+        const agora = moment().tz(timezone).format("YYYY-MM-DD HH:mm:ss");
+        const hoje = moment().tz(timezone).format("YYYY-MM-DD");
 
         const calendario = await Calendario.findOne({
             where: {
                 dt_aula: hoje,
-                id_turma: id_turma,
+                id_turma,
             }
         });
-
-        console.log(id_turma)
-        console.log(agora)
-        console.log(hoje)
 
         if (!calendario) {
             return res.status(400).json({ msg: "Nenhum calendário encontrado para hoje." });
@@ -65,7 +62,7 @@ exports.fazerCheckin = async (req, res) => {
             id_calendario: calendario.pk_calendario,
             dt_entrada: agora,
             fl_is_on: true,
-            tp_status: "pendente"
+            tp_status: "pendente",
         });
 
         res.status(201).json({ msg: "Check-in registrado!" });

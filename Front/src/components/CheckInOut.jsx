@@ -193,7 +193,7 @@ function CheckInOut() {
       if (!token) return;
 
       try {
-        const response = await axios.get("http://localhost:5000/api/usuario", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -219,7 +219,7 @@ function CheckInOut() {
       }
 
       try {
-        const response = await axios.get("http://localhost:5000/api/alunos/pontos", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/pontos", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -260,7 +260,7 @@ function CheckInOut() {
         const confirmExit = window.confirm("Você deseja encerrar o check-in?");
         if (confirmExit) {
           await axios.post(
-            "http://localhost:5000/api/alunos/checkout",
+            "https://escolinha.paranoa.com.br/api/alunos/checkout",
             { latitude, longitude },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -298,7 +298,7 @@ function CheckInOut() {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/alunos/ponto",
+        "https://escolinha.paranoa.com.br/api/alunos/ponto",
         { latitude: 0, longitude: 0, id_turma },
         { headers: { Authorization: `Bearer ${token}` } }
       );

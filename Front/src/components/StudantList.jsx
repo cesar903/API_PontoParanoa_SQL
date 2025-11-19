@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import styled from "styled-components";
-import { FaCheck, FaExclamationTriangle, FaClock } from "react-icons/fa";
+import Graph from "./Graph";
 import ManualPointTeacher from "./ManualPointTeacher";
 import PointEdit from "./PointEdit";
 import Loading from "./Loading";
+import SelectClass from "./SelectClass";
+import axios from "axios";
+import styled from "styled-components";
+import { FaCheck, FaExclamationTriangle, FaClock } from "react-icons/fa";
+
 import { jwtDecode } from "jwt-decode";
-import Graph from "./Graph";
+
 
 const Table = styled.table`
   margin-top: 40px;
@@ -88,35 +91,81 @@ function StudantList() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [pontoSelecionado, setPontoSelecionado] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [professorTipo, setProfessorTipo] = useState(null);
+    const [turmas, setTurmas] = useState([]);
+    const [turmaSelecionada, setTurmaSelecionada] = useState("");
+    const [role, setRole] = useState(null);
 
 
     useEffect(() => {
-        const fetchPendentes = async () => {
-            setLoading(true);
-            try {
-                const token = localStorage.getItem("token");
-                const response = await axios.get(
-                    "http://localhost:5000/api/professores/pontos/pendentes",
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                );
-                setAlunosPendentes(response.data);
-            } catch (error) {
-                setError("Erro ao carregar alunos pendentes");
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!turmaSelecionada) return;
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
         fetchPendentes();
-    }, []);
+    }, [turmaSelecionada]);
+
+    const fetchPendentes = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(
+                `https://escolinha.paranoa.com.br/api/professores/pontos/pendentes?turmaId=${turmaSelecionada}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            setAlunosPendentes(response.data);
+        } catch (error) {
+            setError("Erro ao carregar alunos pendentes");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
     const formatarData = (data) => {
         if (!data) return "—";
         return new Date(data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     };
+
+    useEffect(() => {
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const decodedToken = JSON.parse(atob(token.split(".")[1]));
+            setRole(decodedToken.role);
+        } catch (error) {
+            console.error("Erro ao decodificar token:", error);
+        }
+
+        const fetchTurmas = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            try {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                const turmasRecebidas = response.data;
+                setTurmas(turmasRecebidas);
+
+                if (turmasRecebidas.length > 0) {
+                    setTurmaSelecionada(turmasRecebidas[0].id.toString());
+                }
+            } catch (error) {
+                console.error("Erro ao buscar turmas:", error);
+            }
+        };
+
+        fetchTurmas();
+    }, []);
+
+
 
     const atualizarStatusPonto = async (id, status, saida) => {
         if (status === "aprovado" && !saida) {
@@ -131,12 +180,11 @@ function StudantList() {
         try {
             const token = localStorage.getItem("token");
             await axios.patch(
-                `http://localhost:5000/api/professores/ponto/${id}`,
+                `https://escolinha.paranoa.com.br/api/professores/ponto/${id}`,
                 { status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
-            setAlunosPendentes(alunosPendentes.filter((ponto) => ponto.id !== id));
+            fetchPendentes()
         } catch (error) {
             alert("Erro ao atualizar status do ponto.");
         } finally {
@@ -152,11 +200,10 @@ function StudantList() {
         const entrada = new Date(ponto.entrada);
         const saida = new Date(ponto.saida);
 
-        // Corrigir para fuso horário local
         setPontoSelecionado({
             ...ponto,
-            entrada: entrada.toLocaleString("sv-SE").slice(0, 16), // Formato YYYY-MM-DDTHH:mm
-            saida: saida.toLocaleString("sv-SE").slice(0, 16), // Formato YYYY-MM-DDTHH:mm
+            entrada: entrada.toLocaleString("sv-SE").slice(0, 16),
+            saida: saida.toLocaleString("sv-SE").slice(0, 16),
         });
         setIsEditModalOpen(true);
     };
@@ -168,162 +215,107 @@ function StudantList() {
             return;
         }
 
-        if (!navigator.geolocation) {
-            alert("Geolocalização não é suportada pelo seu navegador.");
-            return;
+        const confirmacao = window.confirm("Deseja finalizar o ponto deste aluno?");
+        if (!confirmacao) return;
+
+        setLoading(true);
+        try {
+            await axios.put(
+                `https://escolinha.paranoa.com.br/api/professores/ponto/finalizar-ponto/${id}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchPendentes()
+        } catch (error) {
+            console.error("Erro ao finalizar o ponto:", error);
+            alert("Não foi possível finalizar o ponto.");
+        } finally {
+            setLoading(false);
         }
 
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-
-                const confirmacao = window.confirm("Deseja finalizar o ponto deste aluno?");
-                if (!confirmacao) return;
-
-                setLoading(true);
-                try {
-                    await axios.put(
-                        `http://localhost:5000/api/professores/ponto/finalizar-ponto/${id}`,
-                        { latitude, longitude }, // Envia a localização do professor
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
-
-                    // Atualiza a lista localmente sem precisar recarregar
-                    setAlunosPendentes((prevAlunosPendentes) =>
-                        prevAlunosPendentes.map((ponto) =>
-                            ponto.id === id ? { ...ponto, saida: new Date().toISOString() } : ponto
-                        )
-                    );
-                } catch (error) {
-                    console.error("Erro ao finalizar o ponto:", error);
-                    alert("Não foi possível finalizar o ponto.");
-                } finally {
-                    setLoading(false);
-                }
-            },
-            (error) => {
-                alert("Erro ao acessar a localização. Ative o GPS e tente novamente.");
-                console.error(error);
-            }
-        );
     };
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (!token) return;
-
-        try {
-            const decoded = jwtDecode(token);
-            if (decoded && decoded.professorTipo) {
-                setProfessorTipo(decoded.professorTipo);
-                console.log("Professor tipo:", decoded.professorTipo);
-            } else {
-                console.warn("Campo 'professorTipo' não encontrado no token");
-            }
-        } catch (error) {
-            console.error("Erro ao decodificar token:", error);
-        }
-    }, []);
-
-
-    const alunosFiltrados = alunosPendentes.filter((ponto) => {
-        const aluno = ponto.aluno;
-        if (!aluno) return false;
-
-        switch (professorTipo) {
-            case "tecnologia":
-                return aluno.turma === "manha" || aluno.turma === "tarde";
-
-            case "karate":
-                return aluno.turma === "karate" || aluno.karate === true;
-
-            case "ginastica":
-                return aluno.ginastica === true;
-
-            default:
-                return true; // caso não tenha tipo definido, mostra todos
-        }
-    });
-
-
-
-
     return (
-        <div className="container">
+        <>
+            <SelectClass
+                value={turmaSelecionada}
+                onChange={(e) => setTurmaSelecionada(e.target.value)}
+                options={turmas}
+                placeholder="Selecione uma turma"
+            />
+            <div className="container">
 
-            <Loading show={loading} />
-            {alunosPendentes.length === 0 ? (
-                <Titulo>Nenhum aluno com aprovação pendente.  <div>
-                </div><FaCheck /></Titulo>
 
-            ) : (
-                <Table>
+                <Loading show={loading} />
+                {alunosPendentes.length === 0 ? (
+                    <Titulo>Nenhum aluno com aprovação pendente.  <div>
+                    </div><FaCheck /></Titulo>
 
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>Nome</th>
-                            <th>Email</th>
-                            <th>Entrada</th>
-                            <th>Saída</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {alunosPendentes.map((ponto) => (
-                            <TableRow key={ponto.id} $status={ponto.status}>
-                                <StatusCell $status={ponto.status}>
-                                    {ponto.status === "aprovado" && <FaCheck />}
-                                    {ponto.status === "rejeitado" && <FaExclamationTriangle />}
-                                    {ponto.status === "pendente" && <FaClock />}
-                                </StatusCell>
-                                <td>{ponto.aluno?.nome}</td>
-                                <td>{ponto.aluno?.email}</td>
-                                <td>{formatarData(ponto.entrada)}</td>
-                                <td>{formatarData(ponto.saida)}</td>
-                                <ActionCell>
-                                    <Button
-                                        $approve
-                                        onClick={() => atualizarStatusPonto(ponto.id, "aprovado", ponto.saida)}
-                                    >
-                                        Aprovar
-                                    </Button>
-                                    <Button onClick={() => atualizarStatusPonto(ponto.id, "rejeitado")}>
-                                        Reprovar
-                                    </Button>
+                ) : (
+                    <Table>
 
-                                    <Button onClick={() => openEditModal(ponto)}>
-                                        Editar
-                                    </Button>
-                                    {!ponto.saida && (
-                                        <Button $approve onClick={() => handleFinalizar(ponto.id)}>
-                                            Finalizar
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Entrada</th>
+                                <th>Saída</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {alunosPendentes.map((ponto) => (
+                                <TableRow key={ponto.pk_ponto} $status={ponto.tp_status}>
+                                    <StatusCell $status={ponto.tp_status}>
+                                        {ponto.tp_status === "aprovado" && <FaCheck />}
+                                        {ponto.tp_status === "rejeitado" && <FaExclamationTriangle />}
+                                        {ponto.tp_status === "pendente" && <FaClock />}
+                                    </StatusCell>
+                                    <td>{ponto.aluno?.nm_usuario}</td>
+                                    <td>{ponto.aluno?.ds_email}</td>
+                                    <td>{formatarData(ponto.dt_entrada)}</td>
+                                    <td>{formatarData(ponto.dt_saida)}</td>
+                                    <ActionCell>
+                                        <Button
+                                            $approve
+                                            onClick={() => atualizarStatusPonto(ponto.pk_ponto, "aprovado", ponto.dt_saida)}
+                                        >
+                                            Aprovar
                                         </Button>
-                                    )}
-                                </ActionCell>
-                            </TableRow>
+                                        <Button onClick={() => atualizarStatusPonto(ponto.pk_ponto, "rejeitado")}>
+                                            Reprovar
+                                        </Button>
 
-                        ))}
-                    </tbody>
-                </Table>
-            )}
+                                        <Button onClick={() => openEditModal(ponto)}>Editar</Button>
+                                        {!ponto.dt_saida && (
+                                            <Button $approve onClick={() => handleFinalizar(ponto.pk_ponto)}>
+                                                Finalizar
+                                            </Button>
+                                        )}
+                                    </ActionCell>
+                                </TableRow>
+                            ))}
 
-            {/* <Graph /> */}
+                        </tbody>
+                    </Table>
+                )}
 
-            <ManualPointTeacher closeModal={closeModal} />
+                {/* <Graph /> */}
 
-            {isEditModalOpen && (
-                <PointEdit
-                    isOpen={isEditModalOpen}
-                    onClose={() => setIsEditModalOpen(false)}
-                    ponto={pontoSelecionado}
-                    atualizarLista={() => window.location.reload()}
-                />
-            )}
+                <ManualPointTeacher closeModal={closeModal} />
 
-        </div>
+                {isEditModalOpen && (
+                    <PointEdit
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        ponto={pontoSelecionado}
+                        atualizarLista={() => window.location.reload()}
+                    />
+                )}
+
+            </div>
+        </>
     );
 }
 

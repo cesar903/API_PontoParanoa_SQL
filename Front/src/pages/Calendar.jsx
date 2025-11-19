@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Calendar from "react-calendar";
+import SelectClass from "../components/SelectClass";
 import axios from "axios";
 import styled from "styled-components";
 import AddInfo from "../components/AddInfo";
@@ -186,29 +187,7 @@ const LegendAndNoticeContainer = styled.div`
   }
 `;
 
-const ContainerSelect = styled.div`
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--DwBoldGray);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 
-  select {
-    padding: 10px 15px;
-    font-size: 1rem;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-    background: var(--DwYellow);
-    color: #333;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s ease-in-out;
-  }
-`;
 
 
 
@@ -242,7 +221,7 @@ const Calendario = () => {
       if (!token) return;
 
       try {
-        const response = await axios.get("http://localhost:5000/api/usuario", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -271,8 +250,8 @@ const Calendario = () => {
 
       const url =
         role === "aluno"
-          ? `http://localhost:5000/api/alunos/calendario?turmaId=${turmaSelecionada}`
-          : `http://localhost:5000/api/professores/calendario?turmaId=${turmaSelecionada}`;
+          ? `https://escolinha.paranoa.com.br/api/alunos/calendario?turmaId=${turmaSelecionada}`
+          : `https://escolinha.paranoa.com.br/api/professores/calendario?turmaId=${turmaSelecionada}`;
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -309,7 +288,7 @@ const Calendario = () => {
 
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
+        `https://escolinha.paranoa.com.br/api/alunos/aniversariantes?turmaId=${turmaSelecionada}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -359,7 +338,7 @@ const Calendario = () => {
     try {
       if (diaExistente && diaExistente.id) {
         await axios.put(
-          `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
+          `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
           { temAula, turma_id: turmaSelecionada },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -376,7 +355,7 @@ const Calendario = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/professores/calendario",
+        "https://escolinha.paranoa.com.br/api/professores/calendario",
         { data: dateString, temAula, turma_id: turmaSelecionada },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -465,7 +444,7 @@ const Calendario = () => {
           }
 
           await axios.delete(
-            `http://localhost:5000/api/professores/calendario/${diaExistente.id}`,
+            `https://escolinha.paranoa.com.br/api/professores/calendario/${diaExistente.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log(`Dia letivo ${dateString} excluído com sucesso.`);
@@ -510,18 +489,16 @@ const Calendario = () => {
     alert(`Salvando aviso para a data: ${formattedDate}`);
 
     const token = localStorage.getItem("token");
-    // A URL agora usa a data formatada, como o backend espera
-    const url = `http://localhost:5000/api/professores/calendario/${turmaSelecionada}/${formattedDate}/aviso`;
+    const url = `https://escolinha.paranoa.com.br/api/professores/calendario/${turmaSelecionada}/${formattedDate}/aviso`;
 
     try {
       await axios.put(
         url,
-        { aviso: newMessage }, // Envia apenas o aviso no corpo da requisição
+        { aviso: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("Aviso atualizado com sucesso");
 
-      // Atualiza o estado localmente após sucesso da API
       setDatas((prevDatas) =>
         prevDatas.map((dia) =>
           dia.data === formattedDate ? { ...dia, aviso: newMessage } : dia
@@ -549,20 +526,13 @@ const Calendario = () => {
 
   return (
     <>
-      <ContainerSelect>
-        <select
-          value={turmaSelecionada}
-          onChange={(e) => setTurmaSelecionada(e.target.value)}
-          className="border rounded-md p-2"
-        >
-          <option value="">Selecione uma turma</option>
-          {turmas.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nome}
-            </option>
-          ))}
-        </select>
-      </ContainerSelect>
+      <SelectClass
+        value={turmaSelecionada}
+        onChange={(e) => setTurmaSelecionada(e.target.value)}
+        options={turmas}
+        placeholder="Selecione uma turma"
+      />
+
       <CalendarContainer>
         <Calendar
           onClickDay={handleDayClick}

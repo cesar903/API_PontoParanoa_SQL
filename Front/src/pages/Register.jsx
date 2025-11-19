@@ -123,7 +123,7 @@ function Register() {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:5000/api/professores/turmas",
+          "https://escolinha.paranoa.com.br/api/professores/turmas",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -166,7 +166,7 @@ function Register() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/professores/usuarios",
+        "https://escolinha.paranoa.com.br/api/professores/usuarios",
         {
           nome: name,
           email,

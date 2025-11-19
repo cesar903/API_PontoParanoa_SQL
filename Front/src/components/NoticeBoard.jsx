@@ -39,7 +39,7 @@ const NoticeBoard = ({ turmaSelecionada, onAvisoAdicionado }) => {
 
         try {
             const response = await axios.get(
-                `http://localhost:5000/api/alunos/avisos?turmaId=${turmaSelecionada}`,
+                `https://escolinha.paranoa.com.br/api/alunos/avisos?turmaId=${turmaSelecionada}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 

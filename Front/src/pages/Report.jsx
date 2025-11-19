@@ -166,7 +166,7 @@ function Report() {
             }
             setLoading(true);
             try {
-                const response = await axios.get("http://localhost:5000/api/professores/alunos", {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -201,7 +201,7 @@ function Report() {
             const ano = mesSelecionado.getFullYear();
 
             const responseRegistros = await axios.get(
-                `http://localhost:5000/api/professores/relatorio/${aluno.id}?mes=${mes}&ano=${ano}`,
+                `https://escolinha.paranoa.com.br/api/professores/relatorio/${aluno.id}?mes=${mes}&ano=${ano}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
@@ -215,7 +215,7 @@ function Report() {
             }
 
             const responseFaltas = await axios.get(
-                `http://localhost:5000/api/professores/contar-faltas/${aluno.id}?mes=${mes}&ano=${ano}`,
+                `https://escolinha.paranoa.com.br/api/professores/contar-faltas/${aluno.id}?mes=${mes}&ano=${ano}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
@@ -288,7 +288,7 @@ function Report() {
 
             // Envia para o backend
             await axios.post(
-                `http://localhost:5000/api/professores/enviar-relatorio/${alunoSelecionado.id}`,
+                `https://escolinha.paranoa.com.br/api/professores/enviar-relatorio/${alunoSelecionado.id}`,
                 formData,
                 {
                     headers: {

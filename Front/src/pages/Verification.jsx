@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SelectClass from "../components/SelectClass";
 import axios from "axios";
 import styled from 'styled-components';
 import { FaCheck, FaExclamationTriangle, FaClock } from "react-icons/fa";
@@ -27,18 +28,18 @@ const Table = styled.table`
 
 const StatusCell = styled.td`
   background-color: ${props => {
-    if (props.$status === 'aprovado') return '#82f89e'; 
+    if (props.$status === 'aprovado') return '#82f89e';
     if (props.$status === 'rejeitado') return '#f17b85';
-    return '#f6f0f0';  
+    return '#f6f0f0';
   }};
   font-weight: bold;
 `;
 
 const TableRow = styled.tr`
   background-color: ${props => {
-    if (props.$status === 'aprovado') return '#82f89e';  
-    if (props.$status === 'rejeitado') return '#f17b85';  
-    return '#f6f0f0';  
+    if (props.$status === 'aprovado') return '#82f89e';
+    if (props.$status === 'rejeitado') return '#f17b85';
+    return '#f6f0f0';
   }};
 `;
 
@@ -70,17 +71,19 @@ function Verification() {
   const [pontos, setPontos] = useState([]);
   const [mesSelecionado, setMesSelecionado] = useState(new Date());
   const [pontosFiltrados, setPontosFiltrados] = useState([]);
+  const [turmas, setTurmas] = useState([]);
+  const [turmaSelecionada, setTurmaSelecionada] = useState("");
 
   useEffect(() => {
     const fetchPontos = async () => {
-      const token = localStorage.getItem("token"); 
+      const token = localStorage.getItem("token");
       if (!token) {
         alert("Você não está autenticado.");
         return;
       }
 
       try {
-        const response = await axios.get("http://localhost:5000/api/alunos/pontos", {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/alunos/pontos", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -95,18 +98,22 @@ function Verification() {
     fetchPontos();
   }, []);
 
-  
+
   useEffect(() => {
     const filtroPontos = pontos.filter((ponto) => {
-      const dataEntrada = new Date(ponto.entrada);
-      const mesPonto = dataEntrada.getMonth(); // Mês da data de entrada
-      const anoPonto = dataEntrada.getFullYear(); // Ano da data de entrada
+      if (!turmaSelecionada) return false;
 
-      return mesPonto === mesSelecionado.getMonth() && anoPonto === mesSelecionado.getFullYear();
+      if (String(ponto.id_turma) !== String(turmaSelecionada)) return false;
+
+      const entrada = new Date(ponto.dt_entrada);
+      const sameMonth = entrada.getMonth() === mesSelecionado.getMonth();
+      const sameYear = entrada.getFullYear() === mesSelecionado.getFullYear();
+      return sameMonth && sameYear;
     });
 
     setPontosFiltrados(filtroPontos);
-  }, [pontos, mesSelecionado]);
+  }, [pontos, mesSelecionado, turmaSelecionada]);
+
 
   const calcularTotalHoras = (entrada, saida) => {
     if (!entrada || !saida) return "—";
@@ -114,64 +121,105 @@ function Verification() {
     const entradaDate = new Date(entrada);
     const saidaDate = new Date(saida);
 
-    // Ajuste para o fuso horário local, se necessário
-    const entradaLocal = new Date(entradaDate.getTime() - entradaDate.getTimezoneOffset() * 60000);
-    const saidaLocal = new Date(saidaDate.getTime() - saidaDate.getTimezoneOffset() * 60000);
+    const diff = saidaDate - entradaDate;
 
-    if (isNaN(entradaLocal.getTime()) || isNaN(saidaLocal.getTime())) {
-      return "Data inválida";
-    }
+    if (diff < 0) return "Erro";
 
-    const diff = saidaLocal - entradaLocal;
+    const horas = Math.floor(diff / (1000 * 60 * 60));
+    const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    // Se a diferença for menor que zero, as datas podem estar erradas
-    if (diff < 0) return "Erro no cálculo";
-
-    // Calculando horas e minutos corretamente
-    const horas = Math.floor(diff / (1000 * 60 * 60)); // Dividindo por milissegundos em uma hora
-    const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); // Resto da diferença para minutos
     return `${horas}h ${minutos}m`;
   };
 
-  return (
-    <div className="container">
-      <SeletorContainer>
-        <label>Selecionar Mês:</label>
-        <SeletorMes
-          selected={mesSelecionado}
-          onChange={(date) => setMesSelecionado(date)}
-          dateFormat="MM/yyyy"
-          showMonthYearPicker
-        />
-      </SeletorContainer>
 
-      <Table>
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Data</th>
-            <th>Entrada</th>
-            <th>Saída</th>
-            <th>Total de Horas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pontosFiltrados.map((ponto) => (
-            <TableRow key={ponto.id} $status={ponto.status}>
-              <StatusCell $status={ponto.status}>
-                {ponto.status === 'aprovado' && <FaCheck />}
-                {ponto.status === 'rejeitado' && <FaExclamationTriangle />}
-                {ponto.status === 'pendente' && <FaClock />}
-              </StatusCell>
-              <td>{new Date(ponto.entrada).toLocaleDateString()}</td>
-              <td>{ponto.entrada ? new Date(ponto.entrada).toLocaleTimeString() : "—"}</td>
-              <td>{ponto.saida ? new Date(ponto.saida).toLocaleTimeString() : "—"}</td>
-              <td>{calcularTotalHoras(ponto.entrada, ponto.saida)}</td>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+  useEffect(() => {
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const decodedToken = JSON.parse(atob(token.split(".")[1]));
+      setRole(decodedToken.role);
+    } catch (error) {
+      console.error("Erro ao decodificar token:", error);
+    }
+
+    const fetchTurmas = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const turmasRecebidas = response.data;
+        setTurmas(turmasRecebidas);
+
+        if (turmasRecebidas.length > 0) {
+          setTurmaSelecionada(turmasRecebidas[0].id.toString());
+        }
+      } catch (error) {
+        console.error("Erro ao buscar turmas:", error);
+      }
+    };
+
+    fetchTurmas();
+  }, []);
+
+
+
+  return (
+    <>
+      <SelectClass
+        value={turmaSelecionada}
+        onChange={(e) => setTurmaSelecionada(e.target.value)}
+        options={turmas}
+        placeholder="Selecione uma turma"
+      />
+
+      <div className="container">
+        <SeletorContainer>
+          <label>Selecionar Mês:</label>
+          <SeletorMes
+            selected={mesSelecionado}
+            onChange={(date) => setMesSelecionado(date)}
+            dateFormat="MM/yyyy"
+            showMonthYearPicker
+          />
+        </SeletorContainer>
+
+        <Table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Data</th>
+              <th>Entrada</th>
+              <th>Saída</th>
+              <th>Total de Horas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pontosFiltrados.map((ponto) => (
+              <TableRow key={ponto.pk_ponto} $status={ponto.tp_status}>
+                <StatusCell $status={ponto.tp_status}>
+                  {ponto.tp_status === 'aprovado' && <FaCheck />}
+                  {ponto.tp_status === 'rejeitado' && <FaExclamationTriangle />}
+                  {ponto.tp_status === 'pendente' && <FaClock />}
+                </StatusCell>
+
+                <td>{new Date(ponto.dt_entrada).toLocaleDateString()}</td>
+                <td>{ponto.dt_entrada ? new Date(ponto.dt_entrada).toLocaleTimeString() : "—"}</td>
+                <td>{ponto.dt_saida ? new Date(ponto.dt_saida).toLocaleTimeString() : "—"}</td>
+
+                <td>{calcularTotalHoras(ponto.dt_entrada, ponto.dt_saida)}</td>
+              </TableRow>
+
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    </>
   );
 }
 

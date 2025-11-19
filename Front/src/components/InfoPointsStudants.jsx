@@ -124,7 +124,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  
+
   const fetchPontos = async () => {
     const token = localStorage.getItem("token");
 
@@ -134,13 +134,13 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/alunos/${aluno.id}/pontos`, {
+      const response = await axios.get(`https://escolinha.paranoa.com.br/api/alunos/${aluno.id}/pontos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPontos(response.data);
     } catch (error) {
       alert(error.response?.data?.msg || "Erro ao buscar os pontos.");
-    } 
+    }
   };
 
   useEffect(() => {
@@ -160,20 +160,20 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
   }, [pontos, mesSelecionado]);
 
   const openEditModal = (ponto) => {
-    const entrada = new Date(ponto.entrada);
-    const saida = new Date(ponto.saida);
+    const entrada = ponto.dt_entrada ? new Date(ponto.dt_entrada) : null;
+    const saida = ponto.dt_saida ? new Date(ponto.dt_saida) : null;
 
-    // Corrigir para fuso horário local
     setPontoSelecionado({
-      ...ponto,
-      entrada: entrada.toLocaleString("sv-SE").slice(0, 16), // Formato YYYY-MM-DDTHH:mm
-      saida: saida.toLocaleString("sv-SE").slice(0, 16), // Formato YYYY-MM-DDTHH:mm
+      id: ponto.pk_ponto,
+      dt_entrada: entrada ? entrada.toLocaleString("sv-SE").slice(0, 16) : "",
+      dt_saida: saida ? saida.toLocaleString("sv-SE").slice(0, 16) : "",
     });
+
     setIsEditModalOpen(true);
   };
 
+
   const handleModalOverlayClick = (e) => {
-    // Apenas fecha o modal se o clique for fora da ModalContent
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -187,13 +187,13 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     }
 
     const confirmar = window.confirm("Você tem certeza que deseja excluir este ponto?");
-    if (!confirmar) return; // Se o usuário cancelar, não faz nada
+    if (!confirmar) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/professores/ponto/${pontoId}`, {
+      await axios.delete(`https://escolinha.paranoa.com.br/api/professores/ponto/${pontoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchPontos(); 
+      fetchPontos();
       alert("Ponto excluído com sucesso.");
     } catch (error) {
       alert(error.response?.data?.msg || "Erro ao excluir ponto.");
@@ -201,7 +201,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
   };
 
   const atualizarLista = async () => {
-    
+
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Você não está autenticado.");
@@ -209,7 +209,7 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/alunos/${aluno.id}/pontos`, {
+      const response = await axios.get(`https://escolinha.paranoa.com.br/api/alunos/${aluno.id}/pontos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

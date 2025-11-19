@@ -75,33 +75,57 @@ const Input = styled.input`
 `;
 
 function PointEdit({ isOpen, onClose, ponto, atualizarLista }) {
-  const [entrada, setEntrada] = useState(ponto?.entrada || "");
-  const [saida, setSaida] = useState(ponto?.saida || "");
+  const [dtEntrada, setDtEntrada] = useState(ponto?.dt_entrada || "");
+  const [dtSaida, setDtSaida] = useState(ponto?.dt_saida || "");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+
+      const pad = (n) => (n < 10 ? "0" + n : n);
+
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1);
+      const day = pad(date.getDate());
+      const hour = pad(date.getHours());
+      const minute = pad(date.getMinutes());
+
+      return `${year}-${month}-${day}T${hour}:${minute}`;
+    };
+
+
+    setDtEntrada(formatDate(ponto?.dt_entrada));
+    setDtSaida(formatDate(ponto?.dt_saida));
+  }, [ponto]);
 
   const handleSave = async () => {
     setLoading(true);
+    alert(ponto.pk_ponto)
+
     try {
       const token = localStorage.getItem("token");
+
       await axios.patch(
-        `http://localhost:5000/api/professores/ponto/editar/${ponto.id}`,
-        { entrada, saida },
+        `https://escolinha.paranoa.com.br/api/professores/ponto/editar/${ponto.pk_ponto}`,
+        {
+          dt_entrada: dtEntrada ? dtEntrada.replace("T", " ") : null,
+          dt_saida: dtSaida ? dtSaida.replace("T", " ") : null,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       alert("Horários atualizados com sucesso!");
       atualizarLista();
       onClose();
     } catch (error) {
+      console.error(error);
       alert("Erro ao atualizar ponto.");
     } finally {
-      setLoading(false); 
-  }
+      setLoading(false);
+    }
   };
-
-  useEffect(() => {
-    setEntrada(ponto?.entrada || "");
-    setSaida(ponto?.saida || "");
-  }, [ponto]);
 
   if (!isOpen) return null;
 
@@ -110,25 +134,24 @@ function PointEdit({ isOpen, onClose, ponto, atualizarLista }) {
       <Loading show={loading} />
       <ModalContent>
         <h2>Editar Ponto</h2>
+
         <Label>Entrada:</Label>
         <Input
           type="datetime-local"
-          value={entrada}
-          onChange={(e) => setEntrada(e.target.value)}
+          value={dtEntrada}
+          onChange={(e) => setDtEntrada(e.target.value)}
         />
+
         <Label>Saída:</Label>
         <Input
           type="datetime-local"
-          value={saida}
-          onChange={(e) => setSaida(e.target.value)}
+          value={dtSaida}
+          onChange={(e) => setDtSaida(e.target.value)}
         />
+
         <div>
-          <Button variant="edit" onClick={handleSave}>
-            Salvar
-          </Button>
-          <Button variant="cancel" onClick={onClose}>
-            Cancelar
-          </Button>
+          <Button variant="edit" onClick={handleSave}>Salvar</Button>
+          <Button variant="cancel" onClick={onClose}>Cancelar</Button>
         </div>
       </ModalContent>
     </ModalOverlay>
@@ -136,3 +159,4 @@ function PointEdit({ isOpen, onClose, ponto, atualizarLista }) {
 }
 
 export default PointEdit;
+

@@ -365,7 +365,7 @@ export default function KarateRegister() {
         const toastId = toast.loading("Enviando PDF, aguarde...");
         try {
             const res = await axios.post(
-                "http://localhost:5000/api/acronis/formulario",
+                "https://escolinha.paranoa.com.br/api/acronis/formulario",
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );

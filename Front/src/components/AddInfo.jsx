@@ -110,7 +110,7 @@ function AddInfo({ turmaSelecionada, onAvisoAdicionado }) {
             const dataFormatada = formData.dia;
 
             await axios.patch(
-                `http://localhost:5000/api/professores/calendario/${turmaSelecionada}/${encodeURIComponent(dataFormatada)}/aviso`,
+                `https://escolinha.paranoa.com.br/api/professores/calendario/${turmaSelecionada}/${encodeURIComponent(dataFormatada)}/aviso`,
                 { aviso: formData.aviso },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

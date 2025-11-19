@@ -18,18 +18,30 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 
 
-
 exports.listarPontosPendentes = async (req, res) => {
     try {
-        const pontosPendentes = await Ponto.findAll({
-            where: { status: "pendente" },
-            include: {
-                model: User,
-                as: "aluno",
-                attributes: ["nome", "email"]
-            }
-        });
+        if (req.user.role !== "professor") {
+            return res.status(403).json({ msg: "Acesso negado. Apenas professores podem visualizar." });
+        }
 
+        const { turmaId } = req.query;
+
+        const whereClause = { tp_status: "pendente" };
+        if (turmaId) {
+            whereClause.id_turma = turmaId;
+        }
+
+        const pontosPendentes = await Ponto.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    as: "aluno",
+                    attributes: ["pk_usuario", "nm_usuario", "ds_email"]
+                }
+            ],
+            order: [["dt_criado_em", "DESC"]]
+        });
 
         res.json(pontosPendentes);
     } catch (error) {
@@ -37,6 +49,7 @@ exports.listarPontosPendentes = async (req, res) => {
         res.status(500).json({ msg: "Erro ao buscar pontos pendentes" });
     }
 };
+
 
 exports.cadastrarUsuario = async (req, res) => {
 
@@ -159,21 +172,27 @@ exports.listarTurmas = async (req, res) => {
 
 exports.aprovarOuRejeitarPonto = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body; // "aprovado" ou "rejeitado"
+    const { status } = req.body;
+
+    console.log(id)
+    console.log(status)
 
     if (!["aprovado", "rejeitado"].includes(status)) {
         return res.status(400).json({ msg: "Status inválido" });
     }
 
     try {
-        const ponto = await Ponto.findByPk(id); // equivalente ao findById
+        const ponto = await Ponto.findByPk(id);
 
         if (!ponto) {
             return res.status(404).json({ msg: "Ponto não encontrado" });
         }
 
         ponto.status = status;
-        await ponto.save();
+        await ponto.update({
+            tp_status: status,
+            dt_atualizado_em: new Date(),
+        });
 
         res.json({ msg: `Ponto ${status} com sucesso!` });
     } catch (error) {
@@ -220,8 +239,8 @@ exports.adicionarPontoManual = async (req, res) => {
 exports.listarAlunos = async (req, res) => {
     try {
         const alunos = await User.findAll({
-            where: { role: "aluno" },
-            attributes: ["id", "nome", "email", "role", "cpf", "nasc", "endereco", "turma", "ginastica", "karate"]
+            where: { tp_usuario: "aluno" },
+            attributes: ["pk_usuario", "nm_usuario", "ds_email", "tp_usuario", "nr_cpf", "dt_nascimento"]
         });
         res.json(alunos);
     } catch (error) {
@@ -514,34 +533,38 @@ exports.gerarRelatorio = async (req, res) => {
 
 exports.editarPonto = async (req, res) => {
     const { id } = req.params;
-    let { entrada, saida } = req.body;
+    let { dt_entrada, dt_saida } = req.body;
 
     try {
-        const ponto = await Ponto.findOne({ where: { id } });
+        const ponto = await Ponto.findOne({ where: { pk_ponto: id } });
         if (!ponto) {
             return res.status(404).json({ msg: "Ponto não encontrado" });
         }
 
         const timezone = "America/Sao_Paulo";
 
-        if (entrada) {
-            ponto.entrada = moment2.tz(entrada, ["DD-MM-YYYY HH:mm", "YYYY-MM-DD HH:mm"], timezone).toDate();
+        if (dt_entrada) {
+            ponto.dt_entrada = moment2
+                .tz(dt_entrada, ["YYYY-MM-DD HH:mm", "DD-MM-YYYY HH:mm"], timezone)
+                .toDate();
         }
 
-        if (saida) {
-            ponto.saida = moment2.tz(saida, ["DD-MM-YYYY HH:mm", "YYYY-MM-DD HH:mm"], timezone).toDate();
+        if (dt_saida) {
+            ponto.dt_saida = moment2
+                .tz(dt_saida, ["YYYY-MM-DD HH:mm", "DD-MM-YYYY HH:mm"], timezone)
+                .toDate();
         }
-
-        console.log("Entrada convertida:", ponto.entrada);
-        console.log("Saída convertida:", ponto.saida);
 
         await ponto.save();
+
         res.json({ msg: "Ponto atualizado com sucesso!" });
+
     } catch (error) {
         console.error("Erro ao editar ponto:", error);
         res.status(500).json({ msg: "Erro ao editar ponto" });
     }
 };
+
 
 
 exports.excluirAluno = async (req, res) => {
@@ -686,29 +709,40 @@ exports.finalizarPonto = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const ponto = await Ponto.findByPk(id); // Usando findByPk para buscar por ID
+        const ponto = await Ponto.findByPk(id);
+
         if (!ponto) {
             return res.status(404).json({ msg: "Ponto não encontrado" });
         }
 
-        if (ponto.saida) {
+        if (ponto.dt_saida) {
             return res.status(400).json({ msg: "O ponto já foi finalizado" });
         }
 
-        // Define a saída com o horário correto do servidor
-        const timezone = "America/Sao_Paulo"; // Defina o fuso horário desejado
-        ponto.saida = moment().tz(timezone).format(); // Formato ISO 8601 com timezone
-        ponto.status = "pendente";
-        ponto.isOn = false;
+        const timezone = "America/Sao_Paulo";
+
+        const saidaFormatada = moment().tz(timezone).format("YYYY-MM-DDTHH:mm:ss");
+
+        ponto.dt_saida = saidaFormatada;
+        ponto.tp_status = "pendente";
+        ponto.fl_is_on = false;
+        ponto.dt_atualizado_em = new Date();
 
         await ponto.save();
 
-        return res.json({ msg: "Ponto finalizado com sucesso!", ponto });
+        return res.json({
+            msg: "Ponto finalizado com sucesso!",
+            ponto,
+        });
     } catch (error) {
         console.error("Erro ao finalizar ponto:", error);
-        return res.status(500).json({ msg: "Erro ao finalizar ponto", error: error.message });
+        return res.status(500).json({
+            msg: "Erro ao finalizar ponto",
+            error: error.message,
+        });
     }
 };
+
 
 
 exports.enviarRelatorio = async (req, res) => {
