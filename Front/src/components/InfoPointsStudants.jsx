@@ -116,7 +116,7 @@ const ButtonEdit = styled.button`
   }
 `;
 
-const InfoPointsStudants = ({ aluno, onClose }) => {
+const InfoPointsStudants = ({ aluno, turmaId, onClose }) => {
   const [mesSelecionado, setMesSelecionado] = useState(new Date());
   const [pontos, setPontos] = useState([]);
   const [pontosFiltrados, setPontosFiltrados] = useState([]);
@@ -150,28 +150,34 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
 
   useEffect(() => {
     const filtroPontos = pontos.filter((ponto) => {
-      const dataEntrada = new Date(ponto.entrada);
-      return (
+      const dataEntrada = new Date(ponto.dt_entrada);
+
+      const mesmoMes =
         dataEntrada.getMonth() === mesSelecionado.getMonth() &&
-        dataEntrada.getFullYear() === mesSelecionado.getFullYear()
-      );
+        dataEntrada.getFullYear() === mesSelecionado.getFullYear();
+
+      const mesmaTurma =
+        !turmaId || String(ponto.id_turma) === String(turmaId);
+
+      return mesmoMes && mesmaTurma;
     });
+
     setPontosFiltrados(filtroPontos);
-  }, [pontos, mesSelecionado]);
+  }, [pontos, mesSelecionado, turmaId]);
+
 
   const openEditModal = (ponto) => {
     const entrada = ponto.dt_entrada ? new Date(ponto.dt_entrada) : null;
     const saida = ponto.dt_saida ? new Date(ponto.dt_saida) : null;
 
     setPontoSelecionado({
-      id: ponto.pk_ponto,
+      pk_ponto: ponto.pk_ponto,
       dt_entrada: entrada ? entrada.toLocaleString("sv-SE").slice(0, 16) : "",
       dt_saida: saida ? saida.toLocaleString("sv-SE").slice(0, 16) : "",
     });
 
     setIsEditModalOpen(true);
   };
-
 
   const handleModalOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -249,15 +255,15 @@ const InfoPointsStudants = ({ aluno, onClose }) => {
             {pontosFiltrados.length > 0 ? (
               pontosFiltrados.map((check, index) => (
                 <tr key={index}>
-                  <Td>{new Date(check.entrada).toLocaleDateString()}</Td>
-                  <Td>{check.status}</Td>
+                  <Td>{check.dt_entrada ? new Date(check.dt_entrada).toLocaleDateString() : "—"}</Td>
+                  <Td>{check.tp_status}</Td>
                   <Td>
-                    {check.entrada ? new Date(check.entrada).toLocaleTimeString() : "—"} /{" "}
-                    {check.saida ? new Date(check.saida).toLocaleTimeString() : "—"}
+                    {check.dt_entrada ? new Date(check.dt_entrada).toLocaleTimeString() : "—"} /{" "}
+                    {check.dt_saida ? new Date(check.dt_saida).toLocaleTimeString() : "—"}
                   </Td>
                   <Td>
                     <ButtonEdit onClick={() => openEditModal(check)}>Editar</ButtonEdit>
-                    <Button onClick={() => handleExcluirPonto(check.id)}>Excluir</Button>
+                    <Button onClick={() => handleExcluirPonto(check.pk_ponto)}>Excluir</Button>
                   </Td>
                 </tr>
               ))

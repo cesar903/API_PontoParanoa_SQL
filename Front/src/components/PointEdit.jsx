@@ -102,7 +102,6 @@ function PointEdit({ isOpen, onClose, ponto, atualizarLista }) {
 
   const handleSave = async () => {
     setLoading(true);
-    alert(ponto.pk_ponto)
 
     try {
       const token = localStorage.getItem("token");

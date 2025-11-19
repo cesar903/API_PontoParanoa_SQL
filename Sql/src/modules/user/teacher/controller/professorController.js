@@ -240,7 +240,21 @@ exports.listarAlunos = async (req, res) => {
     try {
         const alunos = await User.findAll({
             where: { tp_usuario: "aluno" },
-            attributes: ["pk_usuario", "nm_usuario", "ds_email", "tp_usuario", "nr_cpf", "dt_nascimento"]
+            include: [
+                {
+                    model: Turmas,
+                    as: "turmas",
+                    attributes: ["pk_turma", "nm_turma", "fl_ativa"],
+                    through: { attributes: [] }, 
+                }
+            ],
+            attributes: [
+                "pk_usuario",
+                "nm_usuario",
+                "ds_email",
+                "nr_cpf",
+                "dt_nascimento"
+            ]
         });
         res.json(alunos);
     } catch (error) {
@@ -687,22 +701,24 @@ exports.contarFaltas = async (req, res) => {
 };
 
 exports.excluirPonto = async (req, res) => {
-    const { id } = req.params;
-
+    const { id } = req.params; 
 
     try {
-        const ponto = await Ponto.findByPk(id); // Usando findByPk para buscar por ID
+        const ponto = await Ponto.findByPk(id);
+
         if (!ponto) {
             return res.status(404).json({ msg: "Ponto não encontrado" });
         }
 
-        await Ponto.destroy({ where: { id } }); // Usando destroy para excluir
-        res.json({ msg: "Ponto excluído com sucesso!" });
+        await Ponto.destroy({ where: { pk_ponto: id } });
+
+        return res.json({ msg: "Ponto excluído com sucesso!" });
     } catch (error) {
         console.error("Erro ao excluir ponto:", error);
-        res.status(500).json({ msg: "Erro ao excluir ponto" });
+        return res.status(500).json({ msg: "Erro ao excluir ponto" });
     }
 };
+
 
 
 exports.finalizarPonto = async (req, res) => {

@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
+import WholeClass from "../components/WholeClass";
+import Modal from "../components/ModalObs";
+import Lack from "../components/Lack";
+import Loading from "../components/Loading";
+import SelectClass from "../components/SelectClass";
 import axios from "axios";
 import styled from "styled-components";
 import { PDFDownloadLink, pdf } from "@react-pdf/renderer";
 import PDFReport from "../components/PDFReport";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import WholeClass from "../components/WholeClass";
-import Modal from "../components/ModalObs";
-import Lack from "../components/Lack";
-import Loading from "../components/Loading";
+
 
 const Table = styled.table`
   margin-top: 20px;
@@ -155,26 +157,33 @@ function Report() {
     const [isLackModalOpen, setIsLackModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [faltasJustificadas, setFaltasJustificadas] = useState([]);
+    const [turmas, setTurmas] = useState([]);
+    const [role, setRole] = useState(null);
+    
 
 
     useEffect(() => {
         const fetchAlunos = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Você não está autenticado.");
-                return;
-            }
             setLoading(true);
             try {
                 const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
                 });
+                setAlunos(
+                    response.data.map(a => ({
+                        id: a.pk_usuario,
+                        nome: a.nm_usuario,
+                        email: a.ds_email,
+                        cpf: a.nr_cpf,
+                        nascimento: a.dt_nascimento,
+                        turmas: a.turmas ?? []
+                    }))
+                );
 
-                const alunosFiltrados = response.data.filter((aluno) => aluno.role === "aluno");
-                setAlunos(alunosFiltrados);
             } catch (error) {
-                setError("Erro ao carregar alunos");
-                console.error(error);
+                console.error("Erro ao carregar alunos", error);
             } finally {
                 setLoading(false);
             }
@@ -183,12 +192,54 @@ function Report() {
         fetchAlunos();
     }, []);
 
+
+
+    useEffect(() => {
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const decodedToken = JSON.parse(atob(token.split(".")[1]));
+            setRole(decodedToken.role);
+        } catch (error) {
+            console.error("Erro ao decodificar token:", error);
+        }
+
+        const fetchTurmas = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            try {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                const turmasRecebidas = response.data;
+                setTurmas(turmasRecebidas);
+
+                if (turmasRecebidas.length > 0) {
+                    setTurmaSelecionada(turmasRecebidas[0].id.toString());
+                }
+            } catch (error) {
+                console.error("Erro ao buscar turmas:", error);
+            }
+        };
+
+        fetchTurmas();
+    }, []);
+
     const alunosFiltrados = alunos
-        .filter((aluno) =>
-            aluno.nome.toLowerCase().includes(termoPesquisa.toLowerCase()) &&
-            (turmaSelecionada === "todas" || aluno.turma === turmaSelecionada)
+        .filter(a =>
+            a.nome.toLowerCase().includes(termoPesquisa.toLowerCase()) &&
+            (
+                turmaSelecionada === "todas" ||
+                a.turmas.some(t => String(t.pk_turma) === turmaSelecionada)
+
+            )
         )
         .sort((a, b) => a.nome.localeCompare(b.nome));
+
 
 
     const handleGerarRelatorio = async (aluno) => {
@@ -205,8 +256,8 @@ function Report() {
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
-             const { relatorio, faltasJustificadasArray } = responseRegistros.data;
-    
+            const { relatorio, faltasJustificadasArray } = responseRegistros.data;
+
 
 
             if (responseRegistros.data.length === 0) {
@@ -336,89 +387,90 @@ function Report() {
     if (error) return <p>{error}</p>;
 
     return (
-        <div className="container">
-            <Loading show={loading} />
-            <SeletorContainer>
-                <Label>Selecionar Mês:</Label>
-                <ButtonGroup>
-                    <FloatingButton onClick={() => setIsModalOpen(true)}>
-                        Editar Turmas
-                    </FloatingButton>
-                    <FloatingButton onClick={() => setIsLackModalOpen(true)}>
-                        Falta Justificada
-                    </FloatingButton>
-                </ButtonGroup>
+        <>
+            <SelectClass
+                value={turmaSelecionada}
+                onChange={(e) => setTurmaSelecionada(e.target.value)}
+                options={turmas}
+                placeholder="Selecione uma turma"
+            />
 
-                <WholeClass isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-                <Lack isOpen={isLackModalOpen} onClose={() => setIsLackModalOpen(false)} />
+            <div className="container">
 
-                <SeletorMes
-                    selected={mesSelecionado}
-                    onChange={(date) => setMesSelecionado(date)}
-                    dateFormat="MM/yyyy"
-                    showMonthYearPicker
+                <Loading show={loading} />
+                <SeletorContainer>
+                    <ButtonGroup>
+                        <FloatingButton onClick={() => setIsModalOpen(true)}>
+                            Editar Turmas
+                        </FloatingButton>
+                        <FloatingButton onClick={() => setIsLackModalOpen(true)}>
+                            Falta Justificada
+                        </FloatingButton>
+                    </ButtonGroup>
+
+                    <WholeClass isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} turma={turmas.find(t => String(t.id) === String(turmaSelecionada))}/>
+                    <Lack isOpen={isLackModalOpen} onClose={() => setIsLackModalOpen(false)} />
+
+
+                    <Label>Selecionar Mês:</Label>
+                    <SeletorMes
+                        selected={mesSelecionado}
+                        onChange={(date) => setMesSelecionado(date)}
+                        dateFormat="MM/yyyy"
+                        showMonthYearPicker
+                    />
+
+                </SeletorContainer>
+
+                <InputPesquisa
+                    type="text"
+                    placeholder="Pesquisar aluno..."
+                    value={termoPesquisa}
+                    onChange={(e) => setTermoPesquisa(e.target.value)}
                 />
 
-                <SeletorTurma
-                    value={turmaSelecionada}
-                    onChange={(e) => setTurmaSelecionada(e.target.value)}
-                >
-                    <option value="todas">Todas</option>
-                    <option value="manha">Manhã</option>
-                    <option value="tarde">Tarde</option>
-                    <option value="karate">Karatê</option>
-                    <option value="ginastica">Ginástica</option>
-                </SeletorTurma>
-            </SeletorContainer>
-
-            <InputPesquisa
-                type="text"
-                placeholder="Pesquisar aluno..."
-                value={termoPesquisa}
-                onChange={(e) => setTermoPesquisa(e.target.value)}
-            />
-
-            <Table>
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {alunosFiltrados.map((aluno) => (
-                        <tr key={aluno.id}>
-                            <td>{aluno.nome}</td>
-                            <td>{aluno.email}</td>
-                            <td>
-                                <Button onClick={() => handleGerarRelatorio(aluno)}>Gerar Relatório</Button>
-                                {alunoSelecionado && alunoSelecionado.id === aluno.id && registros.length > 0 && relatorioPronto && (
-                                    <>
-                                        <PDFDownloadLink
-                                            document={relatorioPronto}
-                                            fileName={`relatorio_${alunoSelecionado.nome}.pdf`}
-                                        >
-                                            {({ loading }) => <Button>{loading ? "Gerando..." : "Baixar PDF"}</Button>}
-                                        </PDFDownloadLink>
-                                        <Button onClick={handleEnviarRelatorio}>Enviar Relatório</Button>
-
-                                    </>
-                                )}
-                            </td>
+                <Table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Ação</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {alunosFiltrados.map((aluno) => (
+                            <tr key={aluno.id}>
+                                <td>{aluno.nome}</td>
+                                <td>{aluno.email}</td>
+                                <td>
+                                    <Button onClick={() => handleGerarRelatorio(aluno)}>Gerar Relatório</Button>
+                                    {alunoSelecionado && alunoSelecionado.id === aluno.id && registros.length > 0 && relatorioPronto && (
+                                        <>
+                                            <PDFDownloadLink
+                                                document={relatorioPronto}
+                                                fileName={`relatorio_${alunoSelecionado.nome}.pdf`}
+                                            >
+                                                {({ loading }) => <Button>{loading ? "Gerando..." : "Baixar PDF"}</Button>}
+                                            </PDFDownloadLink>
+                                            <Button onClick={handleEnviarRelatorio}>Enviar Relatório</Button>
 
-            <Modal
-                isOpen={isReportModalOpen}
-                onClose={() => setIsReportModalOpen(false)}
-                onConfirm={handleConfirmarRelatorio}
-                observacao={observacao}
-                setObservacao={setObservacao}
-            />
-        </div>
+                                        </>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+
+                <Modal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    onConfirm={handleConfirmarRelatorio}
+                    observacao={observacao}
+                    setObservacao={setObservacao}
+                />
+            </div>
+        </>
     );
 }
 

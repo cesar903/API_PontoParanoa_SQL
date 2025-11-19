@@ -144,15 +144,23 @@ const Select = styled.select`
 `;
 
 
-const WholeClass = ({ isOpen, onClose }) => {
+const WholeClass = ({ isOpen, onClose, turma }) => {
     const [alunos, setAlunos] = useState([]);
     const [error, setError] = useState(null);
     const [confirmation, setConfirmation] = useState({ open: false, alunoNome: "", alunoId: "" });
     const [selectedAluno, setSelectedAluno] = useState(null);
     const [selectedInfoAluno, setSelectedInfoAluno] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [turmaSelecionada, setTurmaSelecionada] = useState("todos");
+    const [turmaSelecionada, setTurmaSelecionada] = useState("null");
     const [loading, setLoading] = useState(false);
+
+
+    useEffect(() => {
+        if (isOpen && turma) {
+            setTurmaSelecionada(turma.id);  // ID
+        }
+    }, [isOpen, turma]);
+
 
 
 
@@ -162,31 +170,32 @@ const WholeClass = ({ isOpen, onClose }) => {
 
     useEffect(() => {
         const fetchAlunos = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Você não está autenticado.");
-                return;
-            }
             setLoading(true);
             try {
                 const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
                 });
+                setAlunos(
+                    response.data.map(a => ({
+                        id: a.pk_usuario,
+                        nome: a.nm_usuario,
+                        email: a.ds_email,
+                        cpf: a.nr_cpf,
+                        nascimento: a.dt_nascimento,
+                        turmas: a.turmas ?? []
+                    }))
+                );
 
-                const alunosFiltrados = response.data
-                    .filter((aluno) => aluno.role === "aluno")
-                    .sort((a, b) => a.nome.localeCompare(b.nome)); // Ordena por nome
-
-                setAlunos(alunosFiltrados);
             } catch (error) {
-                setError("Erro ao carregar alunos");
-                console.error(error);
+                console.error("Erro ao carregar alunos", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchAlunos()
 
+        fetchAlunos();
     }, []);
 
     const handleDelete = (id, nome) => {
@@ -226,8 +235,8 @@ const WholeClass = ({ isOpen, onClose }) => {
         setSelectedAluno({
             ...aluno,
             nasc: dataFormatada,
-            karate: Boolean(aluno.karate),      
-            ginastica: Boolean(aluno.ginastica) 
+            karate: Boolean(aluno.karate),
+            ginastica: Boolean(aluno.ginastica)
         });
     };
 
@@ -267,11 +276,10 @@ const WholeClass = ({ isOpen, onClose }) => {
         }
     };
 
-    const alunosFiltrados = alunos.filter((aluno) => {
-        const nomeFiltrado = aluno.nome.toLowerCase().includes(searchTerm.toLowerCase());
-        const turmaFiltrada = turmaSelecionada === "todos" || aluno.turma === turmaSelecionada;
-        return nomeFiltrado && turmaFiltrada;
-    });
+    const alunosDaTurma = alunos.filter(a =>
+        a.turmas.some(t => String(t.pk_turma) === String(turmaSelecionada))
+    );
+
 
 
 
@@ -283,23 +291,13 @@ const WholeClass = ({ isOpen, onClose }) => {
         <ModalOverlay onClick={onClose}>
             <Loading show={loading} />
             <ModalContent onClick={(e) => e.stopPropagation()}>
-                <h2>{turmaSelecionada.toUpperCase()}</h2>
+                <h2>{turma?.nome ?? "Turma"} </h2>
                 <Input
                     type="text"
                     placeholder="Pesquisar aluno..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-
-                <Select value={turmaSelecionada} onChange={(e) => setTurmaSelecionada(e.target.value)}>
-                    <option value="todos">Todos</option>
-                    <option value="manha">Manhã</option>
-                    <option value="tarde">Tarde</option>
-                    <option value="karate">Karatê</option>
-                    <option value="ginastica">Ginástica</option>
-                </Select>
-
-
 
                 <p>Aqui você pode visualizar os dados da turma inteira.</p>
                 <CloseButton onClick={onClose}>X</CloseButton>
@@ -313,7 +311,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {alunosFiltrados.map((aluno) => (
+                        {alunosDaTurma.map((aluno) => (
                             <tr key={aluno.id}>
                                 <Td>{aluno.nome}</Td>
                                 <Td>{aluno.email}</Td>
@@ -488,6 +486,7 @@ const WholeClass = ({ isOpen, onClose }) => {
                 {selectedInfoAluno && (
                     <InfoPointsStudants
                         aluno={selectedInfoAluno}
+                        turmaId={turmaSelecionada}
                         onClose={() => setSelectedInfoAluno(null)}
                     />
                 )}
