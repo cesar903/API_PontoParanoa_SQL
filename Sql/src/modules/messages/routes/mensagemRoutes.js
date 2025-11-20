@@ -4,16 +4,16 @@ const { Mensagem, User } = require("../../associations/models/associations");
 const { Op } = require("sequelize");
 const authMiddleware = require("../../user/auth/middleware/authMiddleware");
 
-// Enviar mensagem
+
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const { destinatarioId, conteudo } = req.body;
     const remetenteId = req.user.id;
 
     const mensagem = await Mensagem.create({
-      remetenteId,
-      destinatarioId,
-      conteudo,
+      id_remetente: remetenteId,
+      id_destinatario: destinatarioId,
+      ds_conteudo: conteudo,
     });
 
     res.status(201).json(mensagem);
@@ -34,9 +34,9 @@ router.put("/marcar-como-lidas/:remetenteId", authMiddleware, async (req, res) =
       { lida: true },
       {
         where: {
-          remetenteId,
-          destinatarioId: meuId,
-          lida: false,
+          id_remetente,
+          id_destinatario: meuId,
+          fl_lida: false,
         },
       }
     );
@@ -53,18 +53,18 @@ router.get("/nao-lidas", authMiddleware, async (req, res) => {
   try {
     const meuId = req.user.id;
 
-    // Busca todas mensagens não lidas destinadas a mim
+    
     const mensagensNaoLidas = await Mensagem.findAll({
       where: {
-        destinatarioId: meuId,
-        lida: false,
+        id_destinatario: meuId,
+        fl_lida: false,
       },
     });
 
-    // Cria um contador por remetente
+    
     const contador = {};
     mensagensNaoLidas.forEach((msg) => {
-      contador[msg.remetenteId] = (contador[msg.remetenteId] || 0) + 1;
+      contador[msg.id_remetente] = (contador[msg.id_remetente] || 0) + 1;
     });
 
     res.json({
@@ -80,7 +80,6 @@ router.get("/nao-lidas", authMiddleware, async (req, res) => {
 
 
 
-// Listar mensagens entre dois usuários
 router.get("/:usuarioId", authMiddleware, async (req, res) => {
   try {
     const { usuarioId } = req.params;

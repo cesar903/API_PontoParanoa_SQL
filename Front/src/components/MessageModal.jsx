@@ -143,6 +143,20 @@ const NoChat = styled.div`
   color: #666;
 `;
 
+const SelectTurma = styled.select` 
+    padding: 10px 15px;
+    font-size: 1rem;
+    border-radius: 2px;
+    border: none;
+    outline: none;
+    background: var(--DwYellow);
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    margin-bottom: 6px;
+`
+
 
 export default function MessageModal({ onClose }) {
     const [usuarios, setUsuarios] = useState([]);
@@ -153,6 +167,10 @@ export default function MessageModal({ onClose }) {
     const token = localStorage.getItem("token");
     const [naoLidas, setNaoLidas] = useState({});
     const chatMessagesRef = useRef(null);
+    const [turmas, setTurmas] = useState([]);
+    const [turmaEscolhida, setTurmaEscolhida] = useState(null);
+    const [usuariosFiltrados, setUsuariosFiltrados] = useState([]);
+
 
     const scrollToBottom = () => {
         const container = chatMessagesRef.current;
@@ -162,7 +180,6 @@ export default function MessageModal({ onClose }) {
     };
 
 
-    // Buscar lista de usuários (alunos)
     useEffect(() => {
         async function carregarUsuarios() {
             try {
@@ -170,14 +187,30 @@ export default function MessageModal({ onClose }) {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUsuarios(res.data);
-
-                setUsuarios(res.data);
+                console.log(res.data)
             } catch (error) {
                 console.error("Erro ao carregar usuários:", error);
             }
         }
         carregarUsuarios();
     }, [token]);
+
+
+    const fetchTurmas = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const turmasRecebidas = response.data;
+            setTurmas(turmasRecebidas);
+        } catch (error) {
+            console.error("Erro ao buscar turmas:", error);
+        }
+    };
 
 
     useEffect(() => {
@@ -244,6 +277,9 @@ export default function MessageModal({ onClose }) {
     }, [token]);
 
 
+    useEffect(() => {
+        fetchTurmas()
+    }, []);
 
 
 
@@ -318,7 +354,35 @@ export default function MessageModal({ onClose }) {
                         <p>Nenhum contato disponível</p>
                     ) : (
                         <UserList>
-                            {usuarios.map((u) => (
+                            <SelectTurma
+                                value={turmaEscolhida?.id || ""}
+                                onChange={(e) => {
+                                    const turmaId = e.target.value;
+
+                                    const turma = turmas.find(t =>
+                                        String(t.id) === String(turmaId)
+                                    );
+
+                                    setTurmaEscolhida(turma);
+
+                                    const filtrados = usuarios.filter(u =>
+                                        u.turmas?.some(t => String(t.id) === String(turmaId))
+                                    );
+
+                                    setUsuariosFiltrados(filtrados);
+                                }}
+
+                            >
+                                <option value="">Selecione uma turma...</option>
+
+                                {turmas.map((turma) => (
+                                    <option key={turma.id} value={turma.id}>
+                                        {turma.nome}
+                                    </option>
+                                ))}
+                            </SelectTurma>
+
+                            {(turmaEscolhida ? usuariosFiltrados : usuarios).map((u) => (
                                 <UserItem
                                     key={u.id}
                                     $active={destinatarioId === u.id}

@@ -21,7 +21,6 @@ app.use("/api/acronis", require("./src/modules/acronis/routes/acronisRoutes"));
 app.use("/api/usuario", require("./src/modules/classes/routes/turmasRoutes"));
 
 
-
 app.get("/api/test", (req, res) => {
   res.json({ msg: "✅ API conectada com sucesso!" });
 });
