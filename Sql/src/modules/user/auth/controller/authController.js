@@ -54,9 +54,7 @@ const login = async (req, res) => {
         turmas: user.id_professor_tipo
       },
     };
-    
-    console.log(payload)
-
+  
     return res.status(200).json(payload);
   } catch (error) {
     console.error("Erro ao fazer login:", error);

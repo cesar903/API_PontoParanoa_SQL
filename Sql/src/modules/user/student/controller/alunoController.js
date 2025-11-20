@@ -106,22 +106,34 @@ exports.fazerCheckout = async (req, res) => {
 
 exports.adicionarPontoManual = async (req, res) => {
     try {
-        const { dia, chegada, saida } = req.body;
+        const { dia, chegada, saida, id_turma } = req.body;
 
         if (!dia || !chegada || !saida)
             return res.status(400).json({ msg: "Por favor, preencha todos os campos." });
 
-        const entrada = moment.tz(`${dia}T${chegada}:00`, "America/Sao_Paulo").toDate();
-        const saidaFormatada = moment.tz(`${dia}T${saida}:00`, "America/Sao_Paulo").toDate();
+        const dt_entrada = moment.tz(`${dia}T${chegada}:00`, "America/Sao_Paulo").toDate();
+        const dt_saida = moment.tz(`${dia}T${saida}:00`, "America/Sao_Paulo").toDate();
 
-        await Ponto.create({
-            alunoId: req.user.id,
-            entrada,
-            saida: saidaFormatada,
-            status: "pendente"
+        const calendario = await Calendario.findOne({
+            where: { dt_aula: dia }
         });
 
+        if (!calendario)
+            return res.status(400).json({ msg: "Nenhuma aula encontrado para esse dia." });
+
+        await Ponto.create({
+            id_aluno: req.user.id,
+            id_turma,
+            id_calendario: calendario.pk_calendario,
+            dt_entrada: dt_entrada,
+            dt_saida: dt_saida,
+            tp_status: "pendente",
+            fl_is_on: false
+        });
+
+
         res.status(201).json({ msg: "Ponto manual adicionado com sucesso!" });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: "Erro ao adicionar o ponto manual." });

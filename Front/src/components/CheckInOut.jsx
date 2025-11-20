@@ -187,7 +187,6 @@ function CheckInOut() {
     }
 
 
-
     const fetchTurmas = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;

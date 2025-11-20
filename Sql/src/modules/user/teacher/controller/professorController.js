@@ -173,8 +173,6 @@ exports.aprovarOuRejeitarPonto = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    console.log(id)
-    console.log(status)
 
     if (!["aprovado", "rejeitado"].includes(status)) {
         return res.status(400).json({ msg: "Status inválido" });
@@ -203,35 +201,32 @@ exports.aprovarOuRejeitarPonto = async (req, res) => {
 
 exports.adicionarPontoManual = async (req, res) => {
 
-    const { alunoId, dia, chegada, saida } = req.body;
+    const { alunoId, dia, chegada, saida, turmaId } = req.body;
+    if (!dia || !chegada || !saida)
+        return res.status(400).json({ msg: "Por favor, preencha todos os campos." });
 
-    if (!alunoId || !dia || !chegada || !saida) {
-        return res.status(400).json({ msg: "Todos os campos são obrigatórios" });
-    }
+    const dt_entrada = moment.tz(`${dia}T${chegada}:00`, "America/Sao_Paulo").toDate();
+    const dt_saida = moment.tz(`${dia}T${saida}:00`, "America/Sao_Paulo").toDate();
 
-    try {
-        const aluno = await User.findByPk(alunoId);
+    const calendario = await Calendario.findOne({
+        where: { dt_aula: dia }
+    });
 
-        if (!aluno || aluno.role !== "aluno") {
-            return res.status(404).json({ msg: "Aluno não encontrado" });
-        }
+    if (!calendario)
+        return res.status(400).json({ msg: "Nenhuma aula encontrado para esse dia." });
 
-        const entradaSP = moment.tz(`${dia}T${chegada}:00`, "America/Sao_Paulo").toDate();
-        const saidaSP = moment.tz(`${dia}T${saida}:00`, "America/Sao_Paulo").toDate();
+    await Ponto.create({
+        id_aluno: alunoId,
+        id_turma: turmaId,
+        id_calendario: calendario.pk_calendario,
+        dt_entrada: dt_entrada,
+        dt_saida: dt_saida,
+        tp_status: "pendente",
+        fl_is_on: false
+    });
 
-        await Ponto.create({
-            alunoId,
-            entrada: entradaSP,
-            saida: saidaSP,
-            status: "pendente",
-            isOn: false,
-        });
 
-        res.status(201).json({ msg: "Ponto manual adicionado com sucesso!" });
-    } catch (error) {
-        console.error("Erro ao adicionar ponto manual:", error);
-        res.status(500).json({ msg: "Erro ao adicionar ponto manual" });
-    }
+    res.status(201).json({ msg: "Ponto manual adicionado com sucesso!" });
 };
 
 
@@ -452,10 +447,6 @@ exports.adicionarAviso = async (req, res) => {
     const { aviso } = req.body;
     data = data.substring(0, 10);
 
-    console.log("Aviso recebido:", aviso);
-    console.log("Data:", data);
-    console.log("Turma ID:", turmaId);
-
     try {
         const dia = await Calendario.findOne({
             where: {
@@ -614,8 +605,8 @@ exports.atualizarAluno = async (req, res) => {
         cpf,
         endereco,
         role,
-        professorTipo, 
-        descricaoProfessor, 
+        professorTipo,
+        descricaoProfessor,
         turmas
     } = req.body;
 
@@ -631,15 +622,15 @@ exports.atualizarAluno = async (req, res) => {
         await usuario.update({
             nm_usuario: nome,
             ds_email: email,
-            nr_cpf: cpf, 
+            nr_cpf: cpf,
             dt_nascimento: nasc,
             tp_usuario: role,
-            id_professor_tipo: professorTipo || null, 
+            id_professor_tipo: professorTipo || null,
             ds_descricao: descricaoProfessor || null,
             dt_atualizado_em: new Date(),
         }, { transaction: t });
 
-        
+
         const enderecoExistente = await Endereco.findOne({ where: { id_usuario: id } });
 
         const enderecoPayload = {
@@ -905,9 +896,9 @@ exports.excluirFaltaJustificada = async (req, res) => {
     console.log("ID da falta a ser excluída:", faltaId);
 
     try {
-        // Tenta deletar a falta com o ID recebido
+  
         const deletedCount = await Falta.destroy({
-            where: { id: faltaId } // ou 'faltaId' dependendo do nome da chave primária no seu model
+            where: { id: faltaId } 
         });
 
         if (deletedCount === 0) {

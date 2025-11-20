@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { FaPenAlt } from "react-icons/fa";
@@ -70,6 +70,19 @@ const ModalButton = styled.button`
   }
 `;
 
+const Select = styled.select` 
+    padding: 10px 15px;
+    font-size: 1rem;
+    border-radius: 2px;
+    border: none;
+    outline: none;
+    background: var(--DwYellow);
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+`
+
 function ManualPoint() {
     const [modalOpen, setModalOpen] = useState(false);
     const [formData, setFormData] = useState({
@@ -78,6 +91,8 @@ function ManualPoint() {
         saida: "",
     });
     const [loading, setLoading] = useState(false);
+    const [turmas, setTurmas] = useState([]);
+    const [turmaEscolhida, setTurmaEscolhida] = useState(null);
 
     const handleAddManualPonto = async () => {
         const token = localStorage.getItem("token");
@@ -86,7 +101,7 @@ function ManualPoint() {
             return;
         }
 
-        setModalOpen(true); 
+        setModalOpen(true);
     };
 
     const handleChange = (e) => {
@@ -104,23 +119,59 @@ function ManualPoint() {
             return;
         }
 
+        if (!turmaEscolhida?.id) {
+            alert("Selecione uma turma!");
+            return;
+        }
+
         const { dia, chegada, saida } = formData;
         setLoading(true);
 
         try {
             await axios.post(
                 "https://escolinha.paranoa.com.br/api/alunos/ponto/manual",
-                { dia, chegada, saida },
+                {
+                    dia,
+                    chegada,
+                    saida,
+                    id_turma: turmaEscolhida.id
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
             alert("Ponto manual adicionado com sucesso!");
             setModalOpen(false);
+
         } catch (error) {
             alert(error.response?.data?.msg || "Erro ao adicionar o ponto manual.");
-        }finally {
+        } finally {
             setLoading(false);
         }
     };
+
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const fetchTurmas = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            try {
+                const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                const turmasRecebidas = response.data;
+                setTurmas(turmasRecebidas);
+            } catch (error) {
+                console.error("Erro ao buscar turmas:", error);
+            }
+        };
+
+        fetchTurmas();
+    }, []);
 
     return (
         <>
@@ -133,6 +184,26 @@ function ManualPoint() {
                     <Loading show={loading} />
                     <ModalContainer>
                         <h3>Adicionar Ponto Manual</h3>
+
+                        <Select
+                            value={turmaEscolhida?.id || ""}
+                            onChange={(e) => {
+                                const turmaId = e.target.value;
+                                const turma = turmas.find(t => String(t.id) === String(turmaId));
+
+                                setTurmaEscolhida(turma);
+                            }}
+                        >
+                            <option value="">Selecione uma turma...</option>
+                            {turmas.map((turma) => (
+                                <option key={turma.id} value={turma.id}>
+                                    {turma.nome}
+                                </option>
+                            ))}
+                        </Select>
+
+
+
                         <Input
                             type="date"
                             name="dia"
