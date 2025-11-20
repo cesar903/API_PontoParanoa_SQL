@@ -812,8 +812,7 @@ exports.enviarRelatorio = async (req, res) => {
         const { mes, ano } = req.body;
         const pdfBuffer = req.file.buffer;
 
-        // Busca no banco com Sequelize (MySQL)
-        const user = await User.findByPk(alunoId); // <-- equivalente ao findById do Mongo
+        const user = await User.findByPk(alunoId); 
 
         if (!user) {
             return res.status(404).json({ error: "Usuário não encontrado." });
@@ -860,45 +859,107 @@ const transporter = nodemailer.createTransport({
 
 
 exports.adicionarFaltaJustificada = async (req, res) => {
-    console.log("Parâmetros recebidos:", req.params, req.body);
     const { alunoId } = req.params;
-    const { data, justificada, motivo } = req.body;
+    const { data, motivo, idTurma } = req.body;
+
 
     if (!alunoId || !data) {
         return res.status(400).json({ msg: "Aluno e data são obrigatórios" });
     }
 
     try {
-        // Busca o usuário pelo PK com Sequelize
-        const aluno = await User.findByPk(alunoId);
+        await User.findByPk(alunoId);
 
-        if (!aluno || aluno.role !== "aluno") {
-            return res.status(404).json({ msg: "Aluno não encontrado" });
-        }
-
-        // Cria a falta usando Sequelize
-        const novaFalta = await Falta.create({
-            alunoId,
-            data, // Sequelize aceita string ISO para DATEONLY
-            justificada: justificada || false,
-            motivo: justificada ? motivo || "Justificativa não informada" : "",
+        const calendario = await Calendario.findOne({
+            where: { dt_aula: data }
         });
 
-        res.status(201).json({ msg: "Falta registrada com sucesso!", falta: novaFalta });
+        if (!calendario) {
+            return res.status(404).json({ msg: "Dia não encontrado no calendário" });
+        }
+
+        const novaFalta = await Falta.create({
+            id_aluno: alunoId,
+            id_calendario: calendario.pk_calendario,
+            id_turma: idTurma,
+            ds_motivo: motivo || "",
+            fl_gerada_auto: false
+        });
+
+        res.status(201).json({
+            msg: "Falta justificada registrada com sucesso!",
+            falta: novaFalta
+        });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ msg: "Erro ao registrar falta" });
+        res.status(500).json({ msg: "Dia sem aula." });
     }
 };
 
-exports.excluirFaltaJustificada = async (req, res) => {
-    const { faltaId } = req.params;
-    console.log("ID da falta a ser excluída:", faltaId);
+exports.buscarFaltasPorAluno = async (req, res) => {
+    const { alunoId } = req.params;
+    const { mes, ano, turmaId } = req.query;
+
+    if (!alunoId || !mes || !ano || !turmaId) {
+        return res.status(400).json({ msg: "Aluno, mês, ano e turmaId são obrigatórios." });
+    }
 
     try {
-  
+        const aluno = await User.findByPk(alunoId);
+        if (!aluno || aluno.tp_usuario !== "aluno") {
+            return res.status(404).json({ msg: "Aluno não encontrado." });
+        }
+
+        const calendarios = await Calendario.findAll({
+            where: {
+                dt_aula: {
+                    [Op.gte]: `${ano}-${mes}-01`,
+                    [Op.lt]: `${ano}-${Number(mes) + 1}-01`
+                }
+            },
+            attributes: ["pk_calendario", "dt_aula"]
+        });
+
+        const idsCalendarios = calendarios.map(c => c.pk_calendario);
+
+        const faltas = await Falta.findAll({
+            where: {
+                id_aluno: alunoId,
+                id_turma: turmaId,     
+                id_calendario: idsCalendarios
+            },
+            include: [
+                {
+                    model: Calendario,
+                    as: "calendario",
+                    attributes: ["dt_aula"]
+                }
+            ]
+        });
+
+        res.status(200).json({
+            aluno: aluno.nm_usuario,
+            mes,
+            ano,
+            faltas
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Erro ao buscar faltas do aluno." });
+    }
+};
+
+
+
+exports.excluirFaltaJustificada = async (req, res) => {
+    const { faltaId } = req.params;
+
+    try {
+
         const deletedCount = await Falta.destroy({
-            where: { id: faltaId } 
+            where: { pk_falta: faltaId }
         });
 
         if (deletedCount === 0) {

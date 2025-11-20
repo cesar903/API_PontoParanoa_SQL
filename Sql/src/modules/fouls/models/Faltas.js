@@ -2,7 +2,7 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../../../config/db");
 
-const Faltas = sequelize.define(
+const Falta = sequelize.define(
   "Faltas",
   {
     pk_falta: {
@@ -22,6 +22,16 @@ const Faltas = sequelize.define(
       onDelete: "CASCADE",
     },
 
+    id_turma: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "tb_turmas",
+        key: "pk_turma",
+      },
+      onDelete: "CASCADE",
+    },
+
     id_calendario: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -31,6 +41,7 @@ const Faltas = sequelize.define(
       },
       onDelete: "CASCADE",
     },
+
 
 
     ds_motivo: {
@@ -61,4 +72,4 @@ const Faltas = sequelize.define(
   }
 );
 
-module.exports = Faltas;
+module.exports = Falta;

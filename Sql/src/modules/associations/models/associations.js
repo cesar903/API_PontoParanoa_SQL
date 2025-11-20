@@ -2,7 +2,7 @@ const User = require("../../user/models/User");
 const Turmas = require("../../classes/models/Turmas");
 const AlunoTurmas = require("../../classesStudents/models/alunosTurmas");
 const Ponto = require("../../point/models/Ponto");
-const Faltas = require("../../fouls/models/Faltas");
+const Falta = require("../../fouls/models/Faltas");
 const Mensagem = require("../../messages/models/Mensagem");
 const Calendario = require("../../calendar/models/Calendario");
 const Endereco = require("../../address/models/address");
@@ -21,12 +21,12 @@ Ponto.belongsTo(User, {
     as: "aluno",
 });
 
-User.hasMany(Faltas, {
+User.hasMany(Falta, {
     foreignKey: "id_aluno",
     sourceKey: "pk_usuario",
     as: "faltas",
 });
-Faltas.belongsTo(User, {
+Falta.belongsTo(User, {
     foreignKey: "id_aluno",
     targetKey: "pk_usuario",
     as: "aluno",
@@ -41,11 +41,11 @@ Ponto.belongsTo(Calendario, {
     as: "calendario",
 });
 
-Calendario.hasMany(Faltas, {
+Calendario.hasMany(Falta, {
     foreignKey: "id_calendario",
     as: "faltas",
 });
-Faltas.belongsTo(Calendario, {
+Falta.belongsTo(Calendario, {
     foreignKey: "id_calendario",
     as: "calendario",
 });
@@ -77,7 +77,7 @@ User.belongsToMany(Turmas, {
     through: TurmaProfessor,
     foreignKey: 'id_professor',
     otherKey: 'id_turma',
-    as: 'turmasMinistradas' 
+    as: 'turmasMinistradas'
 });
 
 Turmas.belongsToMany(User, {
@@ -145,12 +145,13 @@ User.belongsTo(ProfessorTipo, {
     as: "tipoProfessor"
 });
 
+
 module.exports = {
     User,
     Turmas,
     AlunoTurmas,
     Ponto,
-    Faltas,
+    Falta,
     Mensagem,
     Calendario,
     Endereco,

@@ -25,6 +25,7 @@ const {
     adicionarFaltaJustificada,
     excluirFaltaJustificada,
     listarTurmas,
+    buscarFaltasPorAluno
 
 } = require("../../teacher/controller/professorController");
 
@@ -57,6 +58,7 @@ router.post("/usuarios", authMiddleware, professorMiddleware, cadastrarUsuario);
 router.get("/relatorio/:alunoId", authMiddleware, professorMiddleware, gerarRelatorio);
 router.post("/enviar-relatorio/:alunoId", authMiddleware, professorMiddleware, upload.single('relatorio'), enviarRelatorio);
 router.post("/falta-justificada/:alunoId", authMiddleware, professorMiddleware, adicionarFaltaJustificada);
+router.get("/falta-justificada/:alunoId", authMiddleware, professorMiddleware, buscarFaltasPorAluno);
 router.delete("/falta/:faltaId", authMiddleware, professorMiddleware, excluirFaltaJustificada);
 router.get("/turmas", authMiddleware, professorMiddleware, listarTurmas);
 

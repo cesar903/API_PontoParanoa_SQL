@@ -89,6 +89,19 @@ const ButtonRegistra = styled.button`
     color: #ffffff;
   }
 `
+const SelectTurma = styled.select` 
+    padding: 10px 15px;
+    font-size: 1rem;
+    border-radius: 2px;
+    border: none;
+    outline: none;
+    background: var(--DwYellow);
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    margin-bottom: 6px;
+`
 
 export default function Lack({ isOpen, onClose }) {
     const [alunos, setAlunos] = useState([]);
@@ -101,34 +114,50 @@ export default function Lack({ isOpen, onClose }) {
     const [faltasJustificadas, setFaltasJustificadas] = useState([]);
     const [alunoSelecionado, setAlunoSelecionado] = useState(null);
     const [mesSelecionado, setMesSelecionado] = useState(new Date());
+    const [turmas, setTurmas] = useState([]);
+    const [turmaEscolhida, setTurmaEscolhida] = useState(null);
+    const [alunosFiltrados, setAlunosFiltrados] = useState([]);
 
 
 
-    useEffect(() => {
-        const fetchAlunos = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get("https://escolinha.paranoa.com.br/api/professores/alunos", {
+    const fetchAlunos = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(
+                "https://escolinha.paranoa.com.br/api/professores/alunos",
+                {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
-                });
-                setAlunos(response.data);
-            } catch (error) {
-                console.error("Erro ao carregar alunos", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+                }
+            );
 
-        fetchAlunos();
-    }, []);
+            const data = Object.values(response.data);
+
+            const alunosFormatados = data.map(a => ({
+                id: a.pk_usuario,
+                nome: a.nm_usuario,
+                turmas: a.turmas?.map(t => ({
+                    id: t.pk_turma,
+                    nome: t.nm_turma
+                })) ?? []
+            }));
+
+
+            setAlunos(alunosFormatados);
+
+        } catch (error) {
+            console.error("Erro ao carregar alunos", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const { alunoId, dia } = formData;
-        
+
 
         if (!alunoId || !dia) {
             setMensagem("Preencha todos os campos obrigatórios.");
@@ -140,8 +169,8 @@ export default function Lack({ isOpen, onClose }) {
                 `https://escolinha.paranoa.com.br/api/professores/falta-justificada/${formData.alunoId}`,
                 {
                     data: dia,
-                    justificada: true, // Aqui está fixo como justificada; ajuste conforme desejar
                     motivo: motivo,
+                    idTurma: turmaEscolhida.id,
                 },
                 {
                     headers: {
@@ -149,15 +178,13 @@ export default function Lack({ isOpen, onClose }) {
                     },
                 }
             );
-
-            setMensagem(response.data.msg);
             setFormData({ alunoId: "", dia: "" });
             setMotivo("");
             setMensagem("Falta registrada com sucesso!");
             setTipoMensagem("sucesso");
         } catch (error) {
             console.error(error);
-            setMensagem("Erro ao registrar falta.");
+            setMensagem("Verifique se o dia possui aula.");
             setTipoMensagem("erro");
         }
     };
@@ -173,36 +200,41 @@ export default function Lack({ isOpen, onClose }) {
     };
 
     const handlePegarFaltas = async (aluno) => {
+        if (!aluno) return;           
+        if (!turmaEscolhida?.id) return;    
+
         setAlunoSelecionado(aluno);
         setMensagem("");
         setLoading(true);
+
         try {
             const mes = mesSelecionado.getMonth() + 1;
             const ano = mesSelecionado.getFullYear();
 
-            const responseRegistros = await axios.get(
-                `https://escolinha.paranoa.com.br/api/professores/relatorio/${aluno.id}?mes=${mes}&ano=${ano}`,
-                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            const response = await axios.get(
+                `https://escolinha.paranoa.com.br/api/professores/falta-justificada/${aluno.id}`,
+                {
+                    params: {
+                        mes,
+                        ano,
+                        turmaId: turmaEscolhida.id,
+                    },
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
 
-            const { relatorio, faltasJustificadasArray } = responseRegistros.data;
-
-
-            if (responseRegistros.data.length === 0) {
-                alert(`O aluno ${aluno.nome} não possui registros de check-in no mês ${mes}/${ano}.`);
-                return;
-            }
-
-            setFaltasJustificadas(faltasJustificadasArray);
-            console.log("Faltas justificadas:", faltasJustificadasArray);
-
+            setFaltasJustificadas(response.data.faltas);
         } catch (error) {
-            console.error("Erro ao buscar dados:", error);
+            console.error("Erro ao buscar faltas:", error);
             alert("Erro ao buscar dados do aluno.");
         } finally {
             setLoading(false);
         }
     };
+
+
 
     const handleDeletarFalta = async (faltaId) => {
         setMensagem("");
@@ -232,6 +264,22 @@ export default function Lack({ isOpen, onClose }) {
         }
     };
 
+    const fetchTurmas = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const response = await axios.get("https://escolinha.paranoa.com.br/api/usuario", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const turmasRecebidas = response.data;
+            setTurmas(turmasRecebidas);
+        } catch (error) {
+            console.error("Erro ao buscar turmas:", error);
+        }
+    };
+
 
     useEffect(() => {
         if (modo === "editar" && formData.alunoId) {
@@ -243,11 +291,11 @@ export default function Lack({ isOpen, onClose }) {
 
     useEffect(() => {
         setMensagem("");
-        if (modo === "editar" && alunoSelecionado) {
-
+        if (modo === "editar" && alunoSelecionado && turmaEscolhida?.id) {
             handlePegarFaltas(alunoSelecionado);
         }
     }, [mesSelecionado]);
+
 
     useEffect(() => {
         if (!isOpen) {
@@ -261,6 +309,24 @@ export default function Lack({ isOpen, onClose }) {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        fetchAlunos();
+        fetchTurmas();
+    }, []);
+
+    useEffect(() => {
+        setMensagem("");
+
+        if (modo === "editar" && alunoSelecionado && turmaEscolhida?.id) {
+            handlePegarFaltas(alunoSelecionado);
+        }
+    }, [turmaEscolhida]);
+
+
+
     return (
         <ModalOverlay $isOpen={isOpen}>
             <ModalContainer>
@@ -273,13 +339,42 @@ export default function Lack({ isOpen, onClose }) {
                         <Button onClick={() => setModo("editar")}>Editar</Button>
                     </div>
 
+
+                    <SelectTurma
+                        value={turmaEscolhida?.id || ""}
+                        onChange={(e) => {
+                            const turmaId = e.target.value;
+
+                            const turma = turmas.find(t =>
+                                String(t.id) === String(turmaId)
+                            );
+
+                            setTurmaEscolhida(turma);
+
+                            const filtrados = alunos.filter(a =>
+                                a.turmas?.some(t => String(t.id) === String(turmaId))
+                            );
+
+                            setAlunosFiltrados(filtrados);
+                        }}
+                    >
+                        <option value="">Selecione uma turma...</option>
+
+                        {turmas.map((turma) => (
+                            <option key={turma.id} value={turma.id}>
+                                {turma.nome}
+                            </option>
+                        ))}
+                    </SelectTurma>
+
                     <Select
                         name="alunoId"
                         value={formData.alunoId}
                         onChange={handleChange}
                     >
                         <option value="">Selecione o aluno</option>
-                        {alunos.map((aluno) => (
+
+                        {alunosFiltrados.map((aluno) => (
                             <option key={aluno.id} value={aluno.id}>
                                 {aluno.nome}
                             </option>
@@ -335,17 +430,18 @@ export default function Lack({ isOpen, onClose }) {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {faltasJustificadas.map((falta, index) => (
-                                                            <tr key={index}>
-                                                                <td>{falta.data}</td>
-                                                                <td>{falta.motivo}</td>
+                                                        {faltasJustificadas.map((falta) => (
+                                                            <tr key={falta.pk_falta}>
+                                                                <td>{new Date(falta.calendario.dt_aula).toLocaleDateString("pt-BR")}</td>
+                                                                <td>{falta.ds_motivo || "Sem motivo"}</td>
                                                                 <td>
-                                                                    <ButtonRegistra onClick={() => handleDeletarFalta(falta.id)}>
+                                                                    <ButtonRegistra onClick={() => handleDeletarFalta(falta.pk_falta)}>
                                                                         <FaTrash />
                                                                     </ButtonRegistra>
                                                                 </td>
                                                             </tr>
                                                         ))}
+
                                                     </tbody>
                                                 </table>
                                             </div>
