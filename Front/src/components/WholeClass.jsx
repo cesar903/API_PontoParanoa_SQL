@@ -274,7 +274,7 @@ const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
             const token = localStorage.getItem("token");
 
             const response = await axios.get(
-                `https://escolinha.paranoa.com.br/api/professores/alunos/${aluno.id}`,
+                `https://escolinha.paranoa.com.br/api/me/usuarios/${aluno.id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -287,9 +287,8 @@ const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
                 cpf: data.nr_cpf,
                 nasc: data.dt_nascimento?.split("T")[0] || "",
 
-                role: data.role,
-                professorTipo: data.professor_tipo || "",
-                descricaoProfessor: data.descricao_professor || "",
+                role: data.tp_usuario,
+                professorTipo: data.id_professor_tipo || "",
 
                 endereco: data.endereco || {
                     ds_logradouro: "",
@@ -327,24 +326,19 @@ const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
             email: selectedAluno.email,
             nasc: selectedAluno.nasc,
             role: selectedAluno.role,
-            professorTipo: selectedAluno.professorTipo,
-            descricaoProfessor: selectedAluno.descricaoProfessor,
             endereco: selectedAluno.endereco,
             turmas: selectedAluno.turmasSelecionadas
         };
-
-
 
         try {
             await axios.put(`https://escolinha.paranoa.com.br/api/professores/alunos/${selectedAluno.id}`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            setAlunos((prevAlunos) =>
-                prevAlunos.map((aluno) => (aluno.id === selectedAluno.id ? selectedAluno : aluno))
-            );
-
+            await fetchAlunos();
+            if (onUpdateAlunos) onUpdateAlunos();
             setSelectedAluno(null);
+
         } catch (error) {
             alert("Erro ao salvar as alterações.");
             console.error(error);
@@ -354,7 +348,7 @@ const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
     };
 
     const alunosDaTurma = alunos.filter(a =>
-        a.turmas.some(t => String(t.pk_turma) === String(turmaSelecionada))
+        (a.turmas || []).some(t => String(t.pk_turma) === String(turmaSelecionada))
     );
 
 
@@ -416,7 +410,7 @@ const WholeClass = ({ isOpen, onClose, turma, onUpdateAlunos }) => {
                 {selectedAluno && (
                     <ModalOverlay onClick={() => setSelectedAluno(null)}>
                         <ModalContent onClick={(e) => e.stopPropagation()}>
-                            <h2>Editar Usuário</h2>
+                            <h2>Editar {selectedAluno.nome} </h2>
                             <CloseButton onClick={() => setSelectedAluno(null)}>X</CloseButton>
 
                             <form onSubmit={handleSave}>

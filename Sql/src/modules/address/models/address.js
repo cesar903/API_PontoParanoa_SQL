@@ -10,11 +10,6 @@ const Endereco = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-
-    pk_logradouro: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     ds_logradouro: {
       type: DataTypes.STRING,
       allowNull: false,

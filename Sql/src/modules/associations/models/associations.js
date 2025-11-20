@@ -77,7 +77,7 @@ User.belongsToMany(Turmas, {
     through: TurmaProfessor,
     foreignKey: 'id_professor',
     otherKey: 'id_turma',
-    as: 'turmasMinistradas' // Nome alterado para evitar confusão de N:M
+    as: 'turmasMinistradas' 
 });
 
 Turmas.belongsToMany(User, {

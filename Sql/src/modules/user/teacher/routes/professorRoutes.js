@@ -25,13 +25,11 @@ const {
     adicionarFaltaJustificada,
     excluirFaltaJustificada,
     listarTurmas,
-    usuarioCompleto
 
 } = require("../../teacher/controller/professorController");
 
 const router = express.Router();
 
-// Verifica se o usuário é professor antes de acessar as rotas
 const professorMiddleware = (req, res, next) => {
     if (req.user.role !== "professor") {
         return res.status(403).json({ msg: "Acesso negado. Apenas professores podem acessar essa rota." });
@@ -48,7 +46,6 @@ router.post("/ponto/manual", authMiddleware, professorMiddleware, adicionarPonto
 router.get("/alunos", authMiddleware, professorMiddleware, listarAlunos);
 router.delete("/alunos/:id", authMiddleware, professorMiddleware, excluirAluno);
 router.put("/alunos/:id", authMiddleware, professorMiddleware, atualizarAluno);
-router.get("/alunos/:id", authMiddleware, professorMiddleware, usuarioCompleto);
 router.get("/calendario", authMiddleware, professorMiddleware, listarCalendario);
 router.post("/calendario", authMiddleware, professorMiddleware, cadastrarDiaLetivo);
 router.put("/calendario/:id", authMiddleware, professorMiddleware, atualizarDiaLetivo);

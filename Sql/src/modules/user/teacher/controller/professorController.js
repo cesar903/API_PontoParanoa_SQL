@@ -100,7 +100,6 @@ exports.cadastrarUsuario = async (req, res) => {
 
 
         await Endereco.create({
-            pk_logradouro: endereco.pk_logradouro || null,
             ds_logradouro: endereco.ds_logradouro,
             ds_numero: endereco.ds_numero,
             ds_complemento: endereco.ds_complemento,
@@ -608,40 +607,42 @@ exports.excluirAluno = async (req, res) => {
 
 exports.atualizarAluno = async (req, res) => {
     const { id } = req.params;
-    const { nome,
+    const {
+        nome,
         email,
-        senha,
         nasc,
         cpf,
         endereco,
         role,
-        professorTipo,
-        turmas } = req.body;
+        professorTipo, 
+        descricaoProfessor, 
+        turmas
+    } = req.body;
+
     const t = await sequelize.transaction();
 
-    const aluno = await User.findOne({ where: { pk_usuario } });
-    if (!aluno) {
-        return res.status(404).json({ msg: "Aluno não encontrado" });
-    }
-
     try {
-        const senhaHash = await bcrypt.hash(senha, 10);
+        const usuario = await User.findOne({ where: { pk_usuario: id } });
+        if (!usuario) {
+            await t.rollback();
+            return res.status(404).json({ msg: "Usuário não encontrado" });
+        }
 
-        const updateUsuario = await User.put({
+        await usuario.update({
             nm_usuario: nome,
             ds_email: email,
-            ds_senha_hash: senhaHash,
-            nr_cpf: cpf,
+            nr_cpf: cpf, 
             dt_nascimento: nasc,
             tp_usuario: role,
-            id_professor_tipo: professorTipo,
-            ds_foto_3_4: null,
+            id_professor_tipo: professorTipo || null, 
+            ds_descricao: descricaoProfessor || null,
             dt_atualizado_em: new Date(),
         }, { transaction: t });
 
+        
+        const enderecoExistente = await Endereco.findOne({ where: { id_usuario: id } });
 
-        await Endereco.put({
-            pk_logradouro: endereco.pk_logradouro || null,
+        const enderecoPayload = {
             ds_logradouro: endereco.ds_logradouro,
             ds_numero: endereco.ds_numero,
             ds_complemento: endereco.ds_complemento,
@@ -649,72 +650,48 @@ exports.atualizarAluno = async (req, res) => {
             nm_cidade: endereco.nm_cidade,
             sg_estado: endereco.sg_estado,
             nr_cep: endereco.nr_cep,
-            pk_usuario: novoUsuario.pk_usuario,
-        }, { transaction: t })
+            id_usuario: id,
+        };
 
-        if (role === "aluno" || (role !== "professor" && turmas && turmas.length > 0)) {
-            const associacoesAlunoTurma = turmas.map(turmaId => ({
-                id_aluno: updateUsuario.pk_usuario,
-                id_turma: turmaId,
-                dt_criado_em: new Date(),
-            }));
-            await AlunosTurmas.bulkCreate(associacoesAlunoTurma, { transaction: t });
+        if (enderecoExistente) {
+            await Endereco.update(enderecoPayload, {
+                where: { pk_endereco: enderecoExistente.pk_endereco },
+                transaction: t
+            });
+        } else {
+            await Endereco.create(enderecoPayload, { transaction: t });
         }
 
-        res.json({ msg: "Aluno atualizado com sucesso!", aluno });
-    } catch (error) {
-        console.error("Erro ao atualizar aluno:", error);
-        res.status(500).json({ msg: "Erro ao atualizar aluno" });
-    }
-};
+        await AlunosTurmas.destroy({ where: { id_aluno: id }, transaction: t });
+        await TurmaProfessor.destroy({ where: { id_professor: id }, transaction: t });
 
+        if (turmas && turmas.length > 0) {
 
-exports.usuarioCompleto = async (req, res) => {
-    try {
-        const { id } = req.params;
+            if (role === "aluno") {
+                const associacoesAlunoTurma = turmas.map(turmaId => ({
+                    id_aluno: id,
+                    id_turma: turmaId,
+                    dt_criado_em: new Date(),
+                }));
+                await AlunosTurmas.bulkCreate(associacoesAlunoTurma, { transaction: t });
 
-        const usuario = await User.findOne({
-            where: { pk_usuario: id },
-            attributes: [
-                "pk_usuario",
-                "nm_usuario",
-                "ds_email",
-                "nr_cpf",
-                "dt_nascimento",
-                "tp_usuario"
-            ],
-            include: [
-                {
-                    model: Endereco,
-                    as: "endereco",
-                },
-                {
-                    model: Turmas,
-                    as: "turmas",
-                    through: { attributes: [] }
-                },
-                {
-                    model: ProfessorTipo,
-                    as: "tipoProfessor",
-                }
-            ]
-        });
-
-        if (!usuario) {
-            return res.status(404).json({ msg: "Usuário não encontrado" });
+            } else if (role === "professor") {
+                const associacoesProfessorTurma = turmas.map(turmaId => ({
+                    id_professor: id,
+                    id_turma: turmaId,
+                    dt_criado_em: new Date(),
+                }));
+                await TurmaProfessor.bulkCreate(associacoesProfessorTurma, { transaction: t });
+            }
         }
-
-        res.json(usuario);
-
+        await t.commit();
+        res.json({ msg: `Usuário ${role} atualizado com sucesso!` });
     } catch (error) {
-        console.error("Erro usuarioCompleto:", error);
-        res.status(500).json({ msg: "Erro ao buscar usuário", error });
+        await t.rollback();
+        console.error("Erro ao atualizar usuário:", error);
+        res.status(500).json({ msg: "Erro ao atualizar usuário", error: error.message });
     }
 };
-
-
-
-
 
 exports.contarFaltas = async (req, res) => {
     const { alunoId } = req.params;

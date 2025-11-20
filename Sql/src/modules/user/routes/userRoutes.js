@@ -1,16 +1,21 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const authMiddleware = require("../auth/middleware/authMiddleware");
+const userController = require("../controller/userController");
 const User = require("../models/User");
 const Turmas = require("../../classes/models/Turmas");
 
 const router = express.Router();
 
-// Rota para buscar as informações do usuário
+
+
+router.get("/usuarios/:id", authMiddleware, userController.usuarioCompleto);
+router.get("/listarTurmas", authMiddleware, userController.listarTurmasUsuario);
+
 router.get("/", authMiddleware, async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['senha'] } // Exclui a senha dos dados retornados
+            attributes: { exclude: ['senha'] }
         });
 
         if (!user) {
@@ -24,7 +29,7 @@ router.get("/", authMiddleware, async (req, res) => {
     }
 });
 
-// Rota para alterar a senha do usuário
+
 router.put("/password", authMiddleware, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
@@ -34,13 +39,11 @@ router.put("/password", authMiddleware, async (req, res) => {
             return res.status(404).json({ msg: "Usuário não encontrado" });
         }
 
-        // Verifica se a senha atual está correta
         const isMatch = await bcrypt.compare(currentPassword, user.senha);
         if (!isMatch) {
             return res.status(400).json({ msg: "A senha atual está incorreta. Tente novamente." });
         }
 
-        // Atualizar a senha
         const salt = await bcrypt.genSalt(10);
         user.senha = await bcrypt.hash(newPassword, salt);
         await user.save();
@@ -51,40 +54,5 @@ router.put("/password", authMiddleware, async (req, res) => {
         res.status(500).json({ msg: "Erro ao alterar a senha." });
     }
 });
-
-exports.listarTurmasUsuario = async (req, res) => {
-    try {
-        const { role, id } = req.user;
-
-        let turmas;
-
-        if (role === "aluno") {
-            turmas = await Turmas.findAll({
-                include: [
-                    {
-                        model: User,
-                        as: "alunos",
-                        where: { id },
-                        attributes: [],
-                        through: { attributes: [] },
-                    },
-                ],
-                attributes: ["id", "nome", "descricao", "ativa"],
-            });
-        } else if (role === "professor") {
-            turmas = await Turmas.findAll({
-                where: { professor_id: id },
-                attributes: ["id", "nome", "descricao", "ativa"],
-            });
-        } else {
-            return res.status(403).json({ msg: "Usuário sem permissão." });
-        }
-
-        return res.json(turmas);
-    } catch (error) {
-        console.error("Erro ao listar turmas do usuário:", error);
-        res.status(500).json({ msg: "Erro ao listar turmas do usuário." });
-    }
-};
 
 module.exports = router;
