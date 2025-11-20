@@ -15,6 +15,7 @@ const ModalContainer = styled.div`
     border-radius: 8px;
     z-index: 1000;
     width: 300px;
+    text-align: center;
 `;
 
 const Overlay = styled.div`
@@ -28,27 +29,29 @@ const Overlay = styled.div`
 `;
 
 const CloseButton = styled.button`
-    background: red;
+    background: var(--DwLightGray);
     color: white;
     border: none;
     padding: 10px;
     cursor: pointer;
     margin: 10px;
+    border-radius: 8px;
 `;
 
 const SaveButton = styled.button`
-    background: var(--DwBoldGray);
+    background: green;
     color: white;
     border: none;
     padding: 10px;
     cursor: pointer;
     margin: 10px;
     text-align: center;
+    border-radius: 8px;
 `;
 
 const ButtonContainer = styled.div`
     display: flex;
-    justify-content: space-between;
+    justify-content: start;
     margin-top: 20px;
 `;
 

@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Turmas = require("../../classes/models/Turmas");
 const Endereco = require("../../address/models/address");
@@ -62,12 +63,12 @@ exports.usuarioCompleto = async (req, res) => {
                 },
                 {
                     model: Turmas,
-                    as: "turmas", 
+                    as: "turmas",
                     through: { attributes: [] }
                 },
                 {
                     model: Turmas,
-                    as: "turmasMinistradas", 
+                    as: "turmasMinistradas",
                     through: { attributes: [] }
                 },
                 {
@@ -91,3 +92,51 @@ exports.usuarioCompleto = async (req, res) => {
 };
 
 
+
+exports.updateSenha = async (req, res) => {
+
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findByPk(req.user.id);
+        const storedHash = user.ds_senha_hash;
+
+        if (!user) {
+            return res.status(404).json({ msg: "Usuário não encontrado" });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, storedHash);
+
+        if (!isMatch) {
+            return res.status(400).json({ msg: "A senha atual está incorreta. Tente novamente." });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.ds_senha_hash = await bcrypt.hash(newPassword, salt);
+
+        await user.save();
+
+        res.json({ msg: "Senha alterada com sucesso!" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Erro ao alterar a senha." });
+    }
+}
+
+
+exports.userData = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            attributes: { exclude: ['senha'] }
+        });
+
+        if (!user) {
+            return res.status(404).json({ msg: "Usuário não encontrado" });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Erro ao buscar informações do usuário" });
+    }
+}
